@@ -9,7 +9,6 @@
 <meta name="apple-mobile-web-app-title" content="ACore Athlete">
 <title>ACore Athlete — Il tuo coach personale</title>
 <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
-<link rel="stylesheet" href="aquacore-design-system.css">
 
 <style>
 :root {
@@ -2223,7 +2222,10 @@ async function loginWithGoogle() {
     localStorage.setItem('acore_pending_app', 'athlete');
     await window.__sb.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: 'https://athlete.getaquacore.com' }
+      options: {
+        redirectTo: 'https://athlete.getaquacore.com',
+        queryParams: { access_type: 'offline', prompt: 'select_account' }
+      }
     });
   } catch(e) {
     errEl.textContent = 'Errore durante il login. Riprova.';
