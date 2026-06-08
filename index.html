@@ -54,8 +54,8 @@ input, select, textarea {
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: var(--acid-dim);
-  box-shadow: 0 0 0 2px var(--acid-glow);
+  border-color: var(--app-color-dim);
+  box-shadow: 0 0 0 2px var(--app-color-glow);
 }
 button { cursor: pointer; font-family: inherit; border: none; background: none; transition: all 0.15s ease; }
 
@@ -76,10 +76,10 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   margin: 0 -16px;
 }
 .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.logo-mark { width: 38px; height: 38px; flex-shrink: 0; }
+.logo-mark { width: 32px; height: 32px; flex-shrink: 0; }
 .logo-text { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.04em; }
 .logo-text span { color: var(--app-color); }
-.logo-sub { font-size: 0.65rem; color: var(--ink-secondary); font-family: var(--font-data); letter-spacing: 0.08em; text-transform: uppercase; }
+.logo-sub { font-size: 0.7rem; color: var(--app-color); font-family: var(--font-data); letter-spacing: 0.08em; text-transform: uppercase; }
 .header-right { display: flex; gap: 8px; align-items: center; }
 .lang-btn {
   background: var(--bg-raised);
@@ -90,7 +90,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   font-size: 0.75rem;
   font-weight: 600;
 }
-.lang-btn:hover { border-color: var(--acid-dim); color: var(--acid); }
+.lang-btn:hover { border-color: var(--app-color-dim); color: var(--app-color); }
 .icon-btn {
   background: var(--bg-raised);
   border: var(--border);
@@ -103,7 +103,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   color: var(--ink-secondary);
   font-size: 0.9rem;
 }
-.icon-btn:hover { border-color: var(--acid-dim); color: var(--acid); }
+.icon-btn:hover { border-color: var(--app-color-dim); color: var(--app-color); }
 
 /* ── NAV ── */
 nav {
@@ -125,8 +125,8 @@ nav {
   gap: 3px;
   padding: 4px 8px;
   border-radius: 8px;
-  color: var(--ink-muted);
-  font-size: 0.6rem;
+  color: var(--ink-secondary);
+  font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -134,8 +134,8 @@ nav {
   transition: all 0.15s;
 }
 .nav-btn svg { width: 20px; height: 20px; fill: currentColor; }
-.nav-btn.active { color: var(--acid); }
-.nav-btn.active svg { filter: drop-shadow(0 0 4px var(--acid)); }
+.nav-btn.active { color: var(--app-color); }
+.nav-btn.active svg { filter: drop-shadow(0 0 4px var(--app-color)); }
 
 /* ── TABS ── */
 .tab { display: none; padding-top: 20px; }
@@ -189,8 +189,8 @@ nav {
   justify-content: center;
   gap: 8px;
 }
-.btn-acid { background: var(--acid); color: var(--bg-void); }
-.btn-acid:hover { background: #d9ff33; box-shadow: 0 4px 16px var(--acid-glow); }
+.btn-acid { background: var(--app-color); color: var(--bg-void); opacity: 1; }
+.btn-acid:hover { background: var(--app-color-dim); box-shadow: 0 4px 16px var(--app-color-glow); }
 .btn-secondary { background: var(--bg-raised); border: var(--border); color: var(--ink-primary); }
 .btn-secondary:hover { background: var(--bg-overlay); }
 .btn-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: var(--ruby); }
@@ -216,7 +216,7 @@ nav {
   color: var(--ink-secondary);
   text-align: center;
 }
-.toggle-btn.active { background: var(--acid); color: var(--bg-void); }
+.toggle-btn.active { background: var(--app-color); color: var(--bg-void); }
 
 /* ── PROFILE HERO ── */
 .profile-hero {
@@ -235,7 +235,7 @@ nav {
   right: -40px;
   width: 120px;
   height: 120px;
-  background: var(--acid-glow);
+  background: var(--app-color-glow);
   border-radius: 50%;
   filter: blur(40px);
 }
@@ -243,7 +243,7 @@ nav {
 .profile-meta { font-size: 0.8rem; color: var(--ink-secondary); margin-top: 4px; font-family: var(--font-data); }
 .profile-category {
   display: inline-block;
-  background: var(--acid);
+  background: var(--app-color);
   color: var(--bg-void);
   font-size: 0.7rem;
   font-weight: 700;
@@ -264,9 +264,9 @@ nav {
   cursor: pointer;
   transition: border-color 0.15s;
 }
-.pb-card:hover { border-color: var(--acid-dim); }
+.pb-card:hover { border-color: var(--app-color-dim); }
 .pb-style { font-size: 0.65rem; font-weight: 700; color: var(--ink-muted); letter-spacing: 0.08em; text-transform: uppercase; }
-.pb-time { font-family: var(--font-data); font-size: 1.1rem; font-weight: 700; color: var(--acid); margin-top: 2px; }
+.pb-time { font-family: var(--font-data); font-size: 1.1rem; font-weight: 700; color: var(--app-color); margin-top: 2px; }
 .pb-dist { font-size: 0.7rem; color: var(--ink-secondary); }
 .pb-date { font-size: 0.65rem; color: var(--ink-muted); font-family: var(--font-data); margin-top: 4px; }
 
@@ -277,7 +277,7 @@ nav {
   font-family: var(--font-data);
   font-weight: 700;
   font-size: 1.1rem;
-  color: var(--acid);
+  color: var(--app-color);
   flex: 1;
 }
 .time-sep { color: var(--ink-muted); font-size: 1.1rem; font-weight: 700; }
@@ -315,7 +315,7 @@ nav {
   align-items: center;
   margin-bottom: 8px;
 }
-.workout-title { font-weight: 700; font-size: 1rem; color: var(--acid); font-family: var(--font-data); }
+.workout-title { font-weight: 700; font-size: 1rem; color: var(--app-color); font-family: var(--font-data); }
 .workout-badge {
   font-size: 0.65rem;
   font-family: var(--font-data);
@@ -336,8 +336,8 @@ nav {
   padding: 10px;
   text-align: center;
 }
-.metric-label { font-size: 0.6rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-.metric-value { font-family: var(--font-data); font-weight: 700; font-size: 1.05rem; color: var(--acid); margin-top: 2px; }
+.metric-label { font-size: 0.7rem; color: var(--ink-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+.metric-value { font-family: var(--font-data); font-weight: 700; font-size: 1.05rem; color: var(--app-color); margin-top: 2px; }
 
 /* ── RACE CARD ── */
 .race-card {
@@ -359,7 +359,7 @@ nav {
   color: var(--copper);
   white-space: nowrap;
 }
-.race-countdown { font-family: var(--font-data); font-size: 1.3rem; font-weight: 700; color: var(--acid); margin: 6px 0; }
+.race-countdown { font-family: var(--font-data); font-size: 1.3rem; font-weight: 700; color: var(--app-color); margin: 6px 0; }
 .race-date { font-size: 0.75rem; color: var(--ink-secondary); font-family: var(--font-data); }
 
 /* ── CHECKLIST ── */
@@ -376,7 +376,7 @@ nav {
   background: var(--bg-surface);
 }
 .check-item.done { opacity: 0.5; text-decoration: line-through; }
-.check-item input { width: auto; accent-color: var(--acid); }
+.check-item input { width: auto; accent-color: var(--app-color); }
 
 /* ── WARMUP SECTION ── */
 .warmup-step {
@@ -392,7 +392,7 @@ nav {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--acid);
+  background: var(--app-color);
   color: var(--bg-void);
   display: flex;
   align-items: center;
@@ -402,7 +402,7 @@ nav {
   flex-shrink: 0;
 }
 .warmup-text { flex: 1; }
-.warmup-zone { font-family: var(--font-data); font-size: 0.75rem; font-weight: 700; color: var(--acid); }
+.warmup-zone { font-family: var(--font-data); font-size: 0.75rem; font-weight: 700; color: var(--app-color); }
 
 /* ── TECHNIQUE ── */
 .tech-nav { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -415,12 +415,12 @@ nav {
   border: var(--border);
   color: var(--ink-secondary);
 }
-.tech-pill.active { background: var(--acid); color: var(--bg-void); border-color: var(--acid); }
+.tech-pill.active { background: var(--app-color); color: var(--bg-void); border-color: var(--app-color); }
 .tech-section { display: none; }
 .tech-section.active { display: block; animation: fadeUp 0.2s ease; }
 .tech-tip {
   background: var(--bg-raised);
-  border-left: 3px solid var(--acid);
+  border-left: 3px solid var(--app-color);
   border-radius: 0 8px 8px 0;
   padding: 10px 14px;
   font-size: 0.82rem;
@@ -441,12 +441,12 @@ nav {
 /* ── SWOLF CALCULATOR ── */
 .swolf-result {
   background: var(--bg-overlay);
-  border: 1px solid var(--acid-border);
+  border: 1px solid var(--app-color-border);
   border-radius: 8px;
   padding: 14px;
   text-align: center;
 }
-.swolf-score { font-family: var(--font-data); font-size: 2rem; font-weight: 700; color: var(--acid); }
+.swolf-score { font-family: var(--font-data); font-size: 2rem; font-weight: 700; color: var(--app-color); }
 .swolf-label { font-size: 0.75rem; color: var(--ink-secondary); margin-top: 4px; }
 .swolf-feedback { font-size: 0.82rem; color: var(--ink-primary); margin-top: 8px; }
 
@@ -463,7 +463,7 @@ nav {
 }
 .history-meta strong { font-size: 0.88rem; display: block; }
 .history-meta small { color: var(--ink-secondary); font-size: 0.72rem; font-family: var(--font-data); }
-.history-result { font-family: var(--font-data); font-weight: 700; font-size: 0.95rem; color: var(--acid); }
+.history-result { font-family: var(--font-data); font-weight: 700; font-size: 0.95rem; color: var(--app-color); }
 .history-delta { font-size: 0.7rem; }
 .delta-pos { color: var(--emerald); }
 .delta-neg { color: var(--ruby); }
@@ -486,7 +486,7 @@ nav {
 .progress-bar-wrap { margin-bottom: 10px; }
 .progress-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--ink-secondary); margin-bottom: 4px; }
 .progress-bar { height: 6px; background: var(--bg-raised); border-radius: 3px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--acid); border-radius: 3px; transition: width 0.6s ease; }
+.progress-fill { height: 100%; background: var(--app-color); border-radius: 3px; transition: width 0.6s ease; }
 
 /* ── MODAL ── */
 .modal-overlay {
@@ -538,7 +538,7 @@ nav {
   left: 50%;
   transform: translateX(-50%) translateY(20px);
   background: var(--bg-raised);
-  border: 1px solid var(--acid-border);
+  border: 1px solid var(--app-color-border);
   color: var(--ink-primary);
   padding: 10px 20px;
   border-radius: 20px;
@@ -594,7 +594,7 @@ nav {
   white-space: nowrap;
   flex-shrink: 0;
 }
-.phase-btn.active { background: var(--acid); color: var(--bg-void); border-color: var(--acid); }
+.phase-btn.active { background: var(--app-color); color: var(--bg-void); border-color: var(--app-color); }
 
 /* ── DAY ROW ── */
 .day-row {
@@ -632,7 +632,7 @@ nav {
   font-size: 0.8rem;
   flex-shrink: 0;
 }
-.day-row.done .day-check { background: var(--acid); border-color: var(--acid); color: var(--bg-void); }
+.day-row.done .day-check { background: var(--app-color); border-color: var(--app-color); color: var(--bg-void); }
 
 @media print {
   nav, .header-right, .no-print { display: none !important; }
@@ -654,7 +654,7 @@ nav {
     </svg>
     <div>
       <div class="logo-text">AQUA<span>CORE</span>.AI</div>
-      <div class="logo-sub">Athlete</div>
+      <div class="logo-sub">ACore Athlete</div>
     </div>
   </a>
   <div class="header-right">
@@ -767,7 +767,7 @@ nav {
             <label class="form-label" style="margin:0; white-space:nowrap;" data-i18n="labelDelta">Δ Muro (sec)</label>
             <input type="number" id="paceDelta" value="1.5" step="0.5" style="width:80px; text-align:center; font-family:var(--font-data);" onchange="renderPaces()">
           </div>
-          <div style="font-size:0.72rem; color:var(--ink-muted); background:var(--bg-void); border-radius:6px; padding:8px 10px; border-left:3px solid var(--acid-border);">
+          <div style="font-size:0.72rem; color:var(--ink-muted); background:var(--bg-void); border-radius:6px; padding:8px 10px; border-left:3px solid var(--app-color-border);">
             <span id="deltaHint">⚡ <strong>Δ Muro</strong>: secondi aggiunti al PB per simulare il recupero tra le vasche in allenamento. 1.5 sec = allenamento normale. 0 = ritmo gara puro. Aumentalo se stai lavorando su serie lunghe o recupero corto.</span>
           </div>
         </div>
@@ -776,7 +776,7 @@ nav {
       <div class="card">
         <div class="card-header">
           <span class="card-title" data-i18n="myPaces">I miei passi</span>
-          <span id="paceDistLabel" style="font-family:var(--font-data); font-size:0.75rem; color:var(--acid);"></span>
+          <span id="paceDistLabel" style="font-family:var(--font-data); font-size:0.75rem; color:var(--app-color);"></span>
         </div>
         <div class="card-body" id="paceZones" style="gap:8px;">
           <!-- populated by JS -->
@@ -1772,7 +1772,7 @@ function calcCustomWorkout() {
     resultDiv.innerHTML += `
       <div class="card" style="margin:0;">
         <div class="card-header" style="background:var(--bg-overlay);">
-          <span style="font-weight:700;font-size:1rem;color:var(--acid);font-family:var(--font-data);">${block.reps} × ${block.dist} ${block.style}</span>
+          <span style="font-weight:700;font-size:1rem;color:var(--app-color);font-family:var(--font-data);">${block.reps} × ${block.dist} ${block.style}</span>
         </div>
         <div style="padding:10px;display:flex;flex-direction:column;gap:6px;">
           ${zones.map(z => `
@@ -1930,7 +1930,7 @@ function renderRaces() {
         </div>
         <div class="race-countdown">${countdown}</div>
         <div class="race-date">${r.date}</div>
-        ${r.goalCs ? `<div style="font-size:0.78rem;color:var(--ink-secondary);margin-top:4px;">${state.lang === 'IT' ? 'Obiettivo' : 'Goal'}: <span style="color:var(--acid);font-family:var(--font-data);">${formatCs(r.goalCs)}</span></div>` : ''}
+        ${r.goalCs ? `<div style="font-size:0.78rem;color:var(--ink-secondary);margin-top:4px;">${state.lang === 'IT' ? 'Obiettivo' : 'Goal'}: <span style="color:var(--app-color);font-family:var(--font-data);">${formatCs(r.goalCs)}</span></div>` : ''}
         <div style="display:flex;gap:6px;margin-top:10px;">
           <button class="btn btn-acid btn-sm" style="flex:1;" onclick="openResultModal(${r.id})">${state.lang === 'IT' ? '📝 Risultato' : '📝 Result'}</button>
           <button class="btn btn-danger btn-sm" onclick="deleteRace(${r.id})">🗑</button>
@@ -2036,7 +2036,7 @@ function renderAnalytics() {
           <div style="font-weight:600;">${pb.style} ${pb.dist}m</div>
           <div style="font-size:0.72rem;color:var(--ink-secondary);font-family:var(--font-data);">${pb.date || ''}</div>
         </div>
-        <div style="font-family:var(--font-data);font-weight:700;font-size:1.1rem;color:var(--acid);">${formatCs(pb.cs)}</div>
+        <div style="font-family:var(--font-data);font-weight:700;font-size:1.1rem;color:var(--app-color);">${formatCs(pb.cs)}</div>
       </div>
     `;
   }).join('');
@@ -2051,10 +2051,10 @@ function renderAnalytics() {
     masterContent.innerHTML = `
       <div style="font-size:0.82rem;color:var(--ink-secondary);margin-bottom:10px;">${t('masterCatNote')}</div>
       <div class="progress-bar-wrap">
-        <div class="progress-label"><span>${state.lang === 'IT' ? 'Rispetto al riferimento' : 'vs reference'} ${cat} SL 100m</span><span style="font-family:var(--font-data);color:var(--acid);">${pct}%</span></div>
+        <div class="progress-label"><span>${state.lang === 'IT' ? 'Rispetto al riferimento' : 'vs reference'} ${cat} SL 100m</span><span style="font-family:var(--font-data);color:var(--app-color);">${pct}%</span></div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       </div>
-      <div style="font-size:0.78rem;color:var(--ink-secondary);">${state.lang === 'IT' ? 'Riferimento' : 'Reference'}: <span style="font-family:var(--font-data);color:var(--acid);">${formatCs(ref.SL)}</span> · ${state.lang === 'IT' ? 'Tuo PB' : 'Your PB'}: <span style="font-family:var(--font-data);color:var(--acid);">${formatCs(slPB.cs)}</span></div>
+      <div style="font-size:0.78rem;color:var(--ink-secondary);">${state.lang === 'IT' ? 'Riferimento' : 'Reference'}: <span style="font-family:var(--font-data);color:var(--app-color);">${formatCs(ref.SL)}</span> · ${state.lang === 'IT' ? 'Tuo PB' : 'Your PB'}: <span style="font-family:var(--font-data);color:var(--app-color);">${formatCs(slPB.cs)}</span></div>
     `;
   } else {
     masterContent.innerHTML = `<div style="color:var(--ink-muted);font-size:0.82rem;">${state.lang === 'IT' ? 'Aggiungi il tuo PB nei 100m SL per vedere la comparazione.' : 'Add your 100m freestyle PB to see the comparison.'}</div>`;
