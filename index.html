@@ -1404,6 +1404,14 @@ nav {
   </div>
 </div>
 
+<!-- PAYWALL BANNER (session limit) -->
+<div id="paywallBanner" style="display:none; margin:16px; padding:16px; border-radius:12px; background:linear-gradient(135deg,#1a1a2e,#16213e); border:1px solid #7c3aed; text-align:center;">
+  <div style="font-size:2rem;">🔒</div>
+  <div style="font-weight:700; color:#e2e8f0; margin:8px 0 4px;" id="paywallBannerTitle"></div>
+  <div style="font-size:.85rem; color:#94a3b8; margin-bottom:12px;" id="paywallBannerDesc"></div>
+  <button class="btn-pro" onclick="alert('Upgrade a Pro — coming soon')">Upgrade a Pro</button>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1559,13 +1567,14 @@ const PLANS = {
 let db;
 let state = {
   lang: 'IT',
-  isPro: false,
-  profile: null,   // { name, year, pool, visa }
-  pbs: [],         // [{ style, dist, cs, date }]
-  races: [],       // [{ id, name, date, event, goalCs, result }]
+  profile: null,
+  pbs: [],
+  races: [],
+  workouts: [],
   phase: 'base',
   completed: {},
-  techLogs: []
+  techLogs: [],
+  isPro: false
 };
 
 // ══════════════════════════════════════════════════════
@@ -1581,12 +1590,13 @@ async function initDB() {
   await new Promise(resolve => {
     const start = Date.now();
     const check = () => {
-      if (window.__acoreIsPro !== undefined || Date.now() - start > 3000) resolve();
-      else setTimeout(check, 50);
+      if (window.__acoreIsPro !== undefined || Date.now() - start > 3000) {
+        state.isPro = window.__acoreIsPro === true;
+        resolve();
+      } else setTimeout(check, 50);
     };
     check();
   });
-  state.isPro = window.__acoreIsPro === true;
   applyLang();
   renderAll();
   checkPaywall();
@@ -1971,6 +1981,7 @@ function renderWorkouts() {
 function toggleDay(id) {
   state.completed[id] = !state.completed[id];
   saveState();
+  checkPaywall();
   renderWorkouts();
 }
 
@@ -2273,39 +2284,20 @@ function formatInterval(cs) {
 // ══════════════════════════════════════════════════════
 // PAYWALL
 // ══════════════════════════════════════════════════════
-const FREE_PB_LIMIT = 3;
-const FREE_RACE_LIMIT = 3;
+const FREE_SESSION_LIMIT = 3;
 
 function checkPaywall() {
-  const pbBanner = document.getElementById('paywallBannerPB');
-  const raceBanner = document.getElementById('paywallBannerRace');
-  // PB banner
-  if (pbBanner) {
-    if (!state.isPro && state.pbs.length >= FREE_PB_LIMIT) {
-      pbBanner.style.display = 'flex';
-      document.getElementById('paywallPBTitle').textContent =
-        state.lang === 'IT' ? '🔒 Piano Free — Limite raggiunto' : '🔒 Free Plan — Limit reached';
-      document.getElementById('paywallPBDesc').textContent =
-        state.lang === 'IT'
-          ? 'Passa a Pro per PB illimitati, analytics avanzate e storico completo.'
-          : 'Upgrade to Pro for unlimited PBs, advanced analytics and full history.';
-    } else {
-      pbBanner.style.display = 'none';
-    }
-  }
-  // Race banner
-  if (raceBanner) {
-    if (!state.isPro && state.races.length >= FREE_RACE_LIMIT) {
-      raceBanner.style.display = 'flex';
-      document.getElementById('paywallRaceTitle').textContent =
-        state.lang === 'IT' ? '🔒 Piano Free — Limite raggiunto' : '🔒 Free Plan — Limit reached';
-      document.getElementById('paywallRaceDesc').textContent =
-        state.lang === 'IT'
-          ? 'Passa a Pro per gare illimitate, storico risultati completo e analisi progressione.'
-          : 'Upgrade to Pro for unlimited races, full results history and progression analysis.';
-    } else {
-      raceBanner.style.display = 'none';
-    }
+  const banner = document.getElementById('paywallBanner');
+  if (!banner) return;
+  const show = !state.isPro && state.workouts.length >= FREE_SESSION_LIMIT;
+  banner.style.display = show ? 'block' : 'none';
+  if (show) {
+    document.getElementById('paywallBannerTitle').textContent =
+      state.lang === 'IT' ? 'Piano Free — Limite sessioni raggiunto' : 'Free Plan — Session limit reached';
+    document.getElementById('paywallBannerDesc').textContent =
+      state.lang === 'IT'
+        ? 'Hai registrato 3 sessioni. Passa a Pro per allenamenti illimitati e analisi complete.'
+        : 'You logged 3 sessions. Upgrade to Pro for unlimited workouts and full analytics.';
   }
 }
 
