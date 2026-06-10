@@ -59,6 +59,43 @@ input:focus, select:focus, textarea:focus {
 }
 button { cursor: pointer; font-family: inherit; border: none; background: none; transition: all 0.15s ease; }
 
+/* ── PAYWALL BANNER ── */
+.paywall-banner {
+  background: var(--bg-raised);
+  border: 1px solid var(--acid-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.paywall-text { font-size: 0.78rem; color: var(--ink-secondary); line-height: 1.4; }
+.paywall-text strong {
+  color: var(--acid);
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.btn-pro {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: var(--acid);
+  color: #000;
+  font-family: var(--font-data);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+}
+
 /* ── LAYOUT ── */
 .app { max-width: 520px; margin: 0 auto; padding: 0 16px; }
 
@@ -712,6 +749,16 @@ nav {
         <span class="card-title" data-i18n="personalBests">Personal Best</span>
         <button class="btn btn-sm btn-secondary" onclick="openModal('modalAddPB')" data-i18n="btnAddPB">+ Aggiungi</button>
       </div>
+      <!-- PAYWALL PB -->
+      <div id="paywallBannerPB" style="display:none; margin:12px 12px 0;">
+        <div class="paywall-banner">
+          <div class="paywall-text">
+            <strong id="paywallPBTitle">🔒 Piano Free — Limite raggiunto</strong>
+            <span id="paywallPBDesc">Passa a Pro per PB illimitati, analytics avanzate e storico completo.</span>
+          </div>
+          <button class="btn-pro">Pro 6€/m</button>
+        </div>
+      </div>
       <div class="card-body" style="padding:12px;">
         <div class="pb-grid" id="pbGrid">
           <!-- populated by JS -->
@@ -1046,6 +1093,17 @@ nav {
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- PAYWALL GARE -->
+    <div id="paywallBannerRace" style="display:none;">
+      <div class="paywall-banner">
+        <div class="paywall-text">
+          <strong id="paywallRaceTitle">🔒 Piano Free — Limite raggiunto</strong>
+          <span id="paywallRaceDesc">Passa a Pro per gare illimitate, storico risultati completo e analisi progressione.</span>
+        </div>
+        <button class="btn-pro">Pro 6€/m</button>
       </div>
     </div>
 
@@ -1437,6 +1495,7 @@ const PLANS = {
 let db;
 let state = {
   lang: 'IT',
+  isPro: false,
   profile: null,   // { name, year, pool, visa }
   pbs: [],         // [{ style, dist, cs, date }]
   races: [],       // [{ id, name, date, event, goalCs, result }]
@@ -1453,9 +1512,20 @@ async function initDB() {
   db.version(1).stores({ store: 'key' });
   await db.open();
   const saved = await db.store.get('state');
-  if (saved) state = saved.value;
+  if (saved) state = { ...state, ...saved.value };
+  // Attende il guard asincrono (max 3s) poi carica isPro
+  await new Promise(resolve => {
+    const start = Date.now();
+    const check = () => {
+      if (window.__acoreIsPro !== undefined || Date.now() - start > 3000) resolve();
+      else setTimeout(check, 50);
+    };
+    check();
+  });
+  state.isPro = window.__acoreIsPro === true;
   applyLang();
   renderAll();
+  checkPaywall();
 }
 
 async function saveState() {
@@ -1472,6 +1542,7 @@ function setLang(l) {
   saveState();
   applyLang();
   renderAll();
+  checkPaywall();
 }
 
 function applyLang() {
@@ -1605,6 +1676,11 @@ function setPBPool(pool) {
 }
 
 function savePB() {
+  if (!state.isPro && state.pbs.length >= FREE_PB_LIMIT) {
+    closeModal('modalAddPB');
+    checkPaywall();
+    return;
+  }
   const style = document.getElementById('pbStyle').value;
   const dist = parseInt(document.getElementById('pbDist').value);
   const min = parseInt(document.getElementById('pbMin').value) || 0;
@@ -1622,6 +1698,7 @@ function savePB() {
   saveState();
   renderPBGrid();
   closeModal('modalAddPB');
+  checkPaywall();
   toast(t('toastPBSaved'));
   renderPaces();
 }
@@ -1885,6 +1962,10 @@ function calcSwolf() {
 // RACES
 // ══════════════════════════════════════════════════════
 function addRace() {
+  if (!state.isPro && state.races.length >= FREE_RACE_LIMIT) {
+    checkPaywall();
+    return;
+  }
   const name = document.getElementById('inpRaceName').value.trim();
   const date = document.getElementById('inpRaceDate').value;
   const event = document.getElementById('inpRaceEvent').value;
@@ -1904,6 +1985,7 @@ function addRace() {
   });
   saveState();
   renderRaces();
+  checkPaywall();
   document.getElementById('inpRaceName').value = '';
   document.getElementById('inpRaceDate').value = '';
   document.getElementById('goalMin').value = '';
@@ -2095,6 +2177,45 @@ function formatInterval(cs) {
 }
 
 // ══════════════════════════════════════════════════════
+// PAYWALL
+// ══════════════════════════════════════════════════════
+const FREE_PB_LIMIT = 3;
+const FREE_RACE_LIMIT = 3;
+
+function checkPaywall() {
+  const pbBanner = document.getElementById('paywallBannerPB');
+  const raceBanner = document.getElementById('paywallBannerRace');
+  // PB banner
+  if (pbBanner) {
+    if (!state.isPro && state.pbs.length >= FREE_PB_LIMIT) {
+      pbBanner.style.display = 'flex';
+      document.getElementById('paywallPBTitle').textContent =
+        state.lang === 'IT' ? '🔒 Piano Free — Limite raggiunto' : '🔒 Free Plan — Limit reached';
+      document.getElementById('paywallPBDesc').textContent =
+        state.lang === 'IT'
+          ? 'Passa a Pro per PB illimitati, analytics avanzate e storico completo.'
+          : 'Upgrade to Pro for unlimited PBs, advanced analytics and full history.';
+    } else {
+      pbBanner.style.display = 'none';
+    }
+  }
+  // Race banner
+  if (raceBanner) {
+    if (!state.isPro && state.races.length >= FREE_RACE_LIMIT) {
+      raceBanner.style.display = 'flex';
+      document.getElementById('paywallRaceTitle').textContent =
+        state.lang === 'IT' ? '🔒 Piano Free — Limite raggiunto' : '🔒 Free Plan — Limit reached';
+      document.getElementById('paywallRaceDesc').textContent =
+        state.lang === 'IT'
+          ? 'Passa a Pro per gare illimitate, storico risultati completo e analisi progressione.'
+          : 'Upgrade to Pro for unlimited races, full results history and progression analysis.';
+    } else {
+      raceBanner.style.display = 'none';
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════
 // WIPE
 // ══════════════════════════════════════════════════════
 async function wipeAll() {
@@ -2117,6 +2238,34 @@ function renderAll() {
 // ══════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════
+// ── AQUACORE.AI Auth Guard + Pro Status ──
+window.__acoreIsPro = false; // default sicuro
+(async function() {
+  const SB_URL = 'https://vqfzywjiyzpwhzqwixex.supabase.co';
+  const SB_KEY = 'sb_publishable_GnNyFpSAurKKp6sOl9xc6w_zXCHGa9m';
+  const LOGIN_URL = 'https://getaquacore.com/login';
+  try {
+    const sb = window.supabase.createClient(SB_URL, SB_KEY);
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      localStorage.setItem('acore_pending_app', 'athlete');
+      window.location.replace(LOGIN_URL);
+      return;
+    }
+    const { data: profile } = await sb
+      .from('profiles')
+      .select('is_pro, pro_apps, pro_expires_at')
+      .eq('id', session.user.id)
+      .single();
+    if (profile) {
+      const notExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
+      window.__acoreIsPro = profile.is_pro && notExpired;
+    }
+  } catch(e) {
+    console.warn('[ACore Athlete] Auth guard skipped (offline?):', e);
+  }
+})();
+
 window.addEventListener('load', () => {
   initDB();
 });
