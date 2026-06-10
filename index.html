@@ -28,6 +28,11 @@
   --font-data: 'DM Mono', monospace;
   --border: 1px solid #1e293b;
   --radius: 12px;
+  --z-a2: #34d399;
+  --z-b1: #fbbf24;
+  --z-b2: #f97316;
+  --z-c1: #ef4444;
+  --z-c2: #c084fc;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -764,9 +769,13 @@ nav {
   <section id="tab-profile" class="tab active">
 
     <div id="profileHero" class="profile-hero" style="display:none;">
-      <div class="profile-name" id="profileName">—</div>
-      <div class="profile-meta" id="profileMeta">—</div>
-      <div class="profile-category" id="profileCategory">—</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px;">
+        <div>
+          <div id="profileCardName" style="font-weight:700; font-size:1.1rem; color:#f1f5f9;"></div>
+          <div id="profileCardYear" style="font-size:0.85rem; color:#94a3b8; margin-top:2px;"></div>
+        </div>
+        <div id="profileCardBadge" style="font-size:1.6rem; font-weight:900; font-family:'Syne',sans-serif; color:#a855f7; letter-spacing:-0.5px;"></div>
+      </div>
       <div id="visaAlert" style="display:none; margin-top:12px;">
         <div class="reminder-alert">
           <span class="reminder-icon">⚠️</span>
@@ -804,7 +813,7 @@ nav {
         <div class="paywall-icon">🔒</div>
         <div class="paywall-text">
           <strong id="pbPaywallTitle">Piano Free — Limite raggiunto</strong>
-          <span id="pbPaywallDesc">Passa a Pro per PB illimitati, storico completo e analytics avanzati.</span>
+          <span id="pbPaywallDesc">Passa a Pro per sessioni illimitate, storico completo e analytics avanzati.</span>
         </div>
         <button class="btn-pro">Pro 6€/m</button>
       </div>
@@ -1334,7 +1343,7 @@ nav {
         <div class="toggle-group">
           <button class="toggle-btn active" id="pbPool25m" onclick="setPBPool('25m')">25m</button>
           <button class="toggle-btn" id="pbPool50m" onclick="setPBPool('50m')">50m</button>
-          <button class="toggle-btn" id="pbPool25yd" onclick="setPBPool('25yd')">25yd</button>
+          <button class="toggle-btn" id="pbPool25yd" disabled style="opacity:0.4;cursor:not-allowed;" title="coming soon">25yd</button>
         </div>
         <div style="font-size:0.72rem;color:var(--ink-muted);margin-top:5px;" data-i18n="pbPoolHint">La vasca è importante: lo stesso atleta ha tempi diversi in corta e lunga.</div>
       </div>
@@ -1447,7 +1456,7 @@ const i18n = {
     btnGotIt:'Capito!', modalResultTitle:'Inserisci Risultato Gara', labelResultTime:'Tempo ufficiale', btnSaveResult:'Salva Risultato',
     visaAlertTitle:'Visita medica in scadenza', masterCatTitle:'Categoria', masterCatNote:'Tempi di riferimento World Aquatics per categoria Master.',
     paywallPBTitle: 'Piano Free — Limite raggiunto',
-    paywallPBDesc: 'Passa a Pro per PB illimitati e analytics avanzati.',
+    paywallPBDesc: 'Passa a Pro per sessioni illimitate, storico completo e analytics avanzati.',
     paywallRaceTitle: 'Piano Free — Limite raggiunto',
     paywallRaceDesc: 'Passa a Pro per gare illimitate e storico completo.',
     toastProfileSaved:'✅ Profilo salvato', toastPBSaved:'✅ PB salvato', toastRaceSaved:'✅ Gara aggiunta', toastResultSaved:'✅ Risultato salvato', toastDeleted:'🗑 Eliminato',
@@ -1484,7 +1493,7 @@ const i18n = {
     btnGotIt:'Got it!', modalResultTitle:'Enter Race Result', labelResultTime:'Official time', btnSaveResult:'Save Result',
     visaAlertTitle:'Medical certificate expiring soon', masterCatTitle:'Category', masterCatNote:'World Aquatics reference times for Master categories.',
     paywallPBTitle: 'Free Plan — Limit reached',
-    paywallPBDesc: 'Upgrade to Pro for unlimited PBs and advanced analytics.',
+    paywallPBDesc: 'Upgrade to Pro for unlimited sessions, full history and advanced analytics.',
     paywallRaceTitle: 'Free Plan — Limit reached',
     paywallRaceDesc: 'Upgrade to Pro for unlimited races and full history.',
     toastProfileSaved:'✅ Profile saved', toastPBSaved:'✅ PB saved', toastRaceSaved:'✅ Race added', toastResultSaved:'✅ Result saved', toastDeleted:'🗑 Deleted',
@@ -1701,10 +1710,10 @@ function renderProfile() {
     hero.style.display = 'block';
     pbCard.style.display = 'block';
     wipeSection.style.display = 'block';
-    document.getElementById('profileName').textContent = p.name;
+    document.getElementById('profileCardName').textContent = p.name;
     const cat = getMasterCategory(p.year);
-    document.getElementById('profileMeta').textContent = `${p.year} · Master ${cat}`;
-    document.getElementById('profileCategory').textContent = `Master ${cat}`;
+    document.getElementById('profileCardYear').textContent = `${p.year} · Master ${cat}`;
+    document.getElementById('profileCardBadge').textContent = `Master ${cat}`;
 
     // Visa check
     if (p.visa) {
@@ -1775,6 +1784,9 @@ function savePB() {
   updatePaywallBanners();
   closeModal('modalAddPB');
   toast(t('toastPBSaved'));
+  document.getElementById('pbMin').value = '';
+  document.getElementById('pbSec').value = '';
+  document.getElementById('pbCs').value  = '';
   renderPaces();
 }
 
@@ -1819,7 +1831,11 @@ function resolveDecay(dist) {
 }
 
 function calcZones(pbCs, pool, style, dist, delta) {
-  const baseCs = pbCs + (PENALTY[pool][style] || 0) + (delta * 100);
+  // Normalizza il PB alla distanza di riferimento 100m
+  const decayPb = DECAY[dist] || 1.0;
+  const base100 = pbCs / decayPb;
+  const baseCs = base100 + (PENALTY[pool][style] || 0) + (delta * 100);
+
   const decay = resolveDecay(dist);
   return Object.entries(ZONES).map(([zKey, zCfg]) => {
     const zonePace100 = Math.round(baseCs * zCfg.coef);
