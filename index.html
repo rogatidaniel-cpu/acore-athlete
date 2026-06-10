@@ -1831,11 +1831,12 @@ function resolveDecay(dist) {
 }
 
 function calcZones(pbCs, pool, style, dist, delta) {
-  // Normalizza il PB alla distanza di riferimento 100m
-  const decayPb = DECAY[dist] || 1.0;
+  // Normalizza PB a equivalente 100m prima di applicare decay distanza target
+  const pbDist = dist; // dist è la distanza del PB selezionato
+  const decayPb = DECAY[pbDist] || 1.0;
   const base100 = pbCs / decayPb;
-  const baseCs = base100 + (PENALTY[pool][style] || 0) + (delta * 100);
-
+  const penaltyPer100 = ((PENALTY[pool]?.[style]) || 0);
+  const baseCs = base100 + penaltyPer100 + (delta * 100);
   const decay = resolveDecay(dist);
   return Object.entries(ZONES).map(([zKey, zCfg]) => {
     const zonePace100 = Math.round(baseCs * zCfg.coef);
