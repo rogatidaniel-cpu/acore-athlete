@@ -2248,8 +2248,7 @@ window.__acoreIsPro = false; // default sicuro
     const sb = window.supabase.createClient(SB_URL, SB_KEY);
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
-      localStorage.setItem('acore_pending_app', 'athlete');
-      window.location.replace(LOGIN_URL);
+      window.location.replace(LOGIN_URL + '?app=athlete');
       return;
     }
     const { data: profile } = await sb
