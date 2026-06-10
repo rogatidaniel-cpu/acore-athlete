@@ -59,42 +59,54 @@ input:focus, select:focus, textarea:focus {
 }
 button { cursor: pointer; font-family: inherit; border: none; background: none; transition: all 0.15s ease; }
 
-/* ── PAYWALL BANNER ── */
+/* ── PAYWALL ── */
 .paywall-banner {
   background: var(--bg-raised);
   border: 1px solid var(--acid-border);
   border-radius: var(--radius);
-  padding: 14px 16px;
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
-.paywall-text { font-size: 0.78rem; color: var(--ink-secondary); line-height: 1.4; }
+.paywall-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.paywall-text {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--ink-secondary);
+  line-height: 1.45;
+}
 .paywall-text strong {
   color: var(--acid);
   display: block;
   font-family: var(--font-data);
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 .btn-pro {
   flex-shrink: 0;
-  padding: 7px 12px;
+  padding: 9px 14px;
   border-radius: 8px;
   background: var(--acid);
   color: #000;
   font-family: var(--font-data);
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   white-space: nowrap;
   border: none;
   cursor: pointer;
+  transition: opacity 0.15s;
 }
+.btn-pro:hover { opacity: 0.85; }
 
 /* ── LAYOUT ── */
 .app { max-width: 520px; margin: 0 auto; padding: 0 16px; }
@@ -111,6 +123,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   justify-content: space-between;
   align-items: center;
   margin: 0 -16px;
+  width: calc(100% + 32px);
 }
 .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .logo-mark { width: 32px; height: 32px; flex-shrink: 0; }
@@ -786,20 +799,20 @@ nav {
     </div>
 
     <!-- PB SECTION -->
+    <div id="pbPaywallBanner" style="display:none;">
+      <div class="paywall-banner">
+        <div class="paywall-icon">🔒</div>
+        <div class="paywall-text">
+          <strong id="pbPaywallTitle">Piano Free — Limite raggiunto</strong>
+          <span id="pbPaywallDesc">Passa a Pro per PB illimitati, storico completo e analytics avanzati.</span>
+        </div>
+        <button class="btn-pro">Pro 6€/m</button>
+      </div>
+    </div>
     <div class="card" id="pbCard" style="display:none;">
       <div class="card-header">
         <span class="card-title" data-i18n="personalBests">Personal Best</span>
-        <button class="btn btn-sm btn-secondary" onclick="openModal('modalAddPB')" data-i18n="btnAddPB">+ Aggiungi</button>
-      </div>
-      <!-- PAYWALL PB -->
-      <div id="paywallBannerPB" style="display:none; margin:12px 12px 0;">
-        <div class="paywall-banner">
-          <div class="paywall-text">
-            <strong id="paywallPBTitle">🔒 Piano Free — Limite raggiunto</strong>
-            <span id="paywallPBDesc">Passa a Pro per PB illimitati, analytics avanzate e storico completo.</span>
-          </div>
-          <button class="btn-pro">Pro 6€/m</button>
-        </div>
+        <button class="btn btn-sm btn-secondary" id="btnAddPBBtn" onclick="openModal('modalAddPB')" data-i18n="btnAddPB">+ Aggiungi</button>
       </div>
       <div class="card-body" style="padding:12px;">
         <div class="pb-grid" id="pbGrid">
@@ -1138,12 +1151,13 @@ nav {
       </div>
     </div>
 
-    <!-- PAYWALL GARE -->
-    <div id="paywallBannerRace" style="display:none;">
+    <!-- Paywall gare -->
+    <div id="racePaywallBanner" style="display:none;">
       <div class="paywall-banner">
+        <div class="paywall-icon">🔒</div>
         <div class="paywall-text">
-          <strong id="paywallRaceTitle">🔒 Piano Free — Limite raggiunto</strong>
-          <span id="paywallRaceDesc">Passa a Pro per gare illimitate, storico risultati completo e analisi progressione.</span>
+          <strong id="racePaywallTitle">Piano Free — Limite raggiunto</strong>
+          <span id="racePaywallDesc">Passa a Pro per gare illimitate, storico risultati e analytics.</span>
         </div>
         <button class="btn-pro">Pro 6€/m</button>
       </div>
@@ -1424,6 +1438,10 @@ const i18n = {
     legendTitle:'Legenda Zone & Hydro-Load', legendDesc:'ACore Athlete usa lo stesso motore di calcolo di ACore Coach — personalizzato sul tuo PB.',
     btnGotIt:'Capito!', modalResultTitle:'Inserisci Risultato Gara', labelResultTime:'Tempo ufficiale', btnSaveResult:'Salva Risultato',
     visaAlertTitle:'Visita medica in scadenza', masterCatTitle:'Categoria', masterCatNote:'Tempi di riferimento World Aquatics per categoria Master.',
+    paywallPBTitle: 'Piano Free — Limite raggiunto',
+    paywallPBDesc: 'Passa a Pro per PB illimitati e analytics avanzati.',
+    paywallRaceTitle: 'Piano Free — Limite raggiunto',
+    paywallRaceDesc: 'Passa a Pro per gare illimitate e storico completo.',
     toastProfileSaved:'✅ Profilo salvato', toastPBSaved:'✅ PB salvato', toastRaceSaved:'✅ Gara aggiunta', toastResultSaved:'✅ Risultato salvato', toastDeleted:'🗑 Eliminato',
     zoneLabels:{ A2:'Aerobico Fondo', B1:'Soglia Aerobica', B2:'VO₂max Peak', C1:'Ritmo Gara', C2:'Sprint (Picco Alattacido)' },
     phaseBase:'🟢 Base', phaseBuild:'🟡 Costruzione', phasePeak:'🔴 Picco', phaseTaper:'⬜ Rifinitura',
@@ -1457,6 +1475,10 @@ const i18n = {
     legendTitle:'Zone Legend & Hydro-Load', legendDesc:'ACore Athlete uses the same calculation engine as ACore Coach — personalized to your PB.',
     btnGotIt:'Got it!', modalResultTitle:'Enter Race Result', labelResultTime:'Official time', btnSaveResult:'Save Result',
     visaAlertTitle:'Medical certificate expiring soon', masterCatTitle:'Category', masterCatNote:'World Aquatics reference times for Master categories.',
+    paywallPBTitle: 'Free Plan — Limit reached',
+    paywallPBDesc: 'Upgrade to Pro for unlimited PBs and advanced analytics.',
+    paywallRaceTitle: 'Free Plan — Limit reached',
+    paywallRaceDesc: 'Upgrade to Pro for unlimited races and full history.',
     toastProfileSaved:'✅ Profile saved', toastPBSaved:'✅ PB saved', toastRaceSaved:'✅ Race added', toastResultSaved:'✅ Result saved', toastDeleted:'🗑 Deleted',
     zoneLabels:{ A2:'Aerobic Base', B1:'Aerobic Threshold', B2:'VO₂max Peak', C1:'Race Pace', C2:'Sprint (Alactic Peak)' },
     phaseBase:'🟢 Base', phaseBuild:'🟡 Build', phasePeak:'🔴 Peak', phaseTaper:'⬜ Taper',
@@ -1718,9 +1740,10 @@ function setPBPool(pool) {
 }
 
 function savePB() {
+  const FREE_PB_LIMIT = 3;
   if (!state.isPro && state.pbs.length >= FREE_PB_LIMIT) {
-    closeModal('modalAddPB');
-    checkPaywall();
+    updatePaywallBanners();
+    toast(state.lang === 'IT' ? '🔒 Limite piano Free raggiunto' : '🔒 Free plan limit reached');
     return;
   }
   const style = document.getElementById('pbStyle').value;
@@ -1739,8 +1762,8 @@ function savePB() {
 
   saveState();
   renderPBGrid();
+  updatePaywallBanners();
   closeModal('modalAddPB');
-  checkPaywall();
   toast(t('toastPBSaved'));
   renderPaces();
 }
@@ -2004,8 +2027,10 @@ function calcSwolf() {
 // RACES
 // ══════════════════════════════════════════════════════
 function addRace() {
-  if (!state.isPro && state.races.length >= FREE_RACE_LIMIT) {
-    checkPaywall();
+  const FREE_RACE_LIMIT = 3;
+  if (!state.isPro && state.races.filter(r => !r.result).length >= FREE_RACE_LIMIT) {
+    updatePaywallBanners();
+    toast(state.lang === 'IT' ? '🔒 Limite piano Free raggiunto' : '🔒 Free plan limit reached');
     return;
   }
   const name = document.getElementById('inpRaceName').value.trim();
@@ -2135,6 +2160,33 @@ function deleteRace(id) {
   saveState();
   renderRaces();
   toast(t('toastDeleted'));
+}
+
+function updatePaywallBanners() {
+  const FREE_PB_LIMIT = 3;
+  const FREE_RACE_LIMIT = 3;
+  const l = state.lang;
+
+  // Banner PB
+  const pbBanner = document.getElementById('pbPaywallBanner');
+  const btnAddPB = document.getElementById('btnAddPBBtn');
+  if (pbBanner) {
+    const showPB = !state.isPro && state.pbs.length >= FREE_PB_LIMIT;
+    pbBanner.style.display = showPB ? 'block' : 'none';
+    document.getElementById('pbPaywallTitle').textContent = t('paywallPBTitle');
+    document.getElementById('pbPaywallDesc').textContent = t('paywallPBDesc');
+    if (btnAddPB) btnAddPB.style.display = showPB ? 'none' : '';
+  }
+
+  // Banner Gare
+  const raceBanner = document.getElementById('racePaywallBanner');
+  if (raceBanner) {
+    const activeRaces = state.races.filter(r => !r.result).length;
+    const showRace = !state.isPro && activeRaces >= FREE_RACE_LIMIT;
+    raceBanner.style.display = showRace ? 'block' : 'none';
+    document.getElementById('racePaywallTitle').textContent = t('paywallRaceTitle');
+    document.getElementById('racePaywallDesc').textContent = t('paywallRaceDesc');
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -2274,6 +2326,7 @@ function renderAll() {
   renderProfile();
   renderWorkouts();
   renderRaces();
+  updatePaywallBanners();
   applyLang();
 }
 
