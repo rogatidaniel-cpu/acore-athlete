@@ -1753,12 +1753,7 @@ function setPBPool(pool) {
 }
 
 function savePB() {
-  const FREE_PB_LIMIT = 3;
-  if (!state.isPro && state.pbs.length >= FREE_PB_LIMIT) {
-    updatePaywallBanners();
-    toast(state.lang === 'IT' ? '🔒 Limite piano Free raggiunto' : '🔒 Free plan limit reached');
-    return;
-  }
+  // PB illimitati anche in free — il paywall è sulle sessioni
   const style = document.getElementById('pbStyle').value;
   const dist = parseInt(document.getElementById('pbDist').value);
   const min = parseInt(document.getElementById('pbMin').value) || 0;
