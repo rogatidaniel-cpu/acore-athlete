@@ -738,6 +738,7 @@ nav {
 }
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23a855f7'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='18' fill='white'>A</text></svg>">
 </head>
 <body>
 
@@ -1789,14 +1790,30 @@ function renderPBGrid() {
     grid.innerHTML = `<div style="color:var(--ink-muted);font-size:0.8rem;">${t('noPBMessage')}</div>`;
     return;
   }
-  grid.innerHTML = state.pbs.map(pb => `
-    <div class="pb-card" onclick="prefillPBEdit('${pb.style}','${pb.dist}','${pb.pool||'25m'}')">
+  grid.innerHTML = state.pbs.map((pb, idx) => `
+    <div class="pb-card" style="position:relative;" onclick="prefillPBEdit('${pb.style}','${pb.dist}','${pb.pool||'25m'}')">
       <div class="pb-style">${pb.style} ${pb.dist}m</div>
       <div class="pb-time">${formatCs(pb.cs)}</div>
       <div class="pb-dist" style="color:var(--copper);font-size:0.68rem;font-family:var(--font-data);">${pb.pool || '25m'}</div>
       <div class="pb-date">${pb.date || ''}</div>
+      <button onclick="event.stopPropagation(); deletePB(${idx})" style="position:absolute;top:6px;right:6px;background:none;border:none;color:#475569;font-size:0.85rem;cursor:pointer;padding:2px 4px;line-height:1;" title="Elimina">🗑</button>
     </div>
   `).join('');
+}
+
+function deletePB(idx) {
+  const pb = state.pbs[idx];
+  if (!pb) return;
+  const label = `${pb.style} ${pb.dist}m`;
+  const msg = state.lang === 'IT'
+    ? `Eliminare il PB ${label}?`
+    : `Delete PB ${label}?`;
+  if (!confirm(msg)) return;
+  state.pbs.splice(idx, 1);
+  saveState();
+  renderPBGrid();
+  renderPaces();
+  toast(t('toastDeleted'));
 }
 
 function prefillPBEdit(style, dist, pool) {
@@ -1882,6 +1899,16 @@ function renderPaces() {
   const content = document.getElementById('pacesContent');
 
   if (!pb || !state.profile) {
+    const styleName = styleEl.options[styleEl.selectedIndex]?.text || style;
+    noPB.innerHTML = `<div style="text-align:center;padding:32px 16px;">
+      <div style="font-size:2rem;margin-bottom:8px;">🏊</div>
+      <div style="color:var(--ink-secondary);font-size:0.88rem;">
+        ${state.lang === 'IT'
+          ? `Nessun PB per <strong style="color:var(--app-color)">${styleName}</strong> — aggiungilo nella tab Profilo.`
+          : `No PB for <strong style="color:var(--app-color)">${styleName}</strong> — add it in the Profile tab.`
+        }
+      </div>
+    </div>`;
     noPB.style.display = 'block';
     content.style.display = 'none';
     return;
