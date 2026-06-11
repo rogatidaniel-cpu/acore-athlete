@@ -2238,20 +2238,11 @@ function deleteRace(id) {
 }
 
 function updatePaywallBanners() {
-  const FREE_PB_LIMIT = 3;
   const FREE_RACE_LIMIT = 3;
-  const l = state.lang;
 
-  // Banner PB
+  // PB illimitati anche in free — banner PB sempre nascosto
   const pbBanner = document.getElementById('pbPaywallBanner');
-  const btnAddPB = document.getElementById('btnAddPBBtn');
-  if (pbBanner) {
-    const showPB = !state.isPro && state.pbs.length >= FREE_PB_LIMIT;
-    pbBanner.style.display = showPB ? 'block' : 'none';
-    document.getElementById('pbPaywallTitle').textContent = t('paywallPBTitle');
-    document.getElementById('pbPaywallDesc').textContent = t('paywallPBDesc');
-    if (btnAddPB) btnAddPB.style.display = showPB ? 'none' : '';
-  }
+  if (pbBanner) pbBanner.style.display = 'none';
 
   // Banner Gare
   const raceBanner = document.getElementById('racePaywallBanner');
