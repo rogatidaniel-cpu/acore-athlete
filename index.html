@@ -1848,8 +1848,18 @@ function calcZones(pbCs, pool, style, dist, delta, pbDist) {
 }
 
 function renderPaces() {
-  const style = document.getElementById('paceStyle').value;
-  const dist = parseInt(document.getElementById('paceDist').value);
+  // Se lo stile selezionato non ha un PB, passa al primo stile disponibile
+  const styleEl = document.getElementById('paceStyle');
+  const distEl = document.getElementById('paceDist');
+  const currentStyle = styleEl.value;
+  const hasPB = state.pbs.some(p => p.style === currentStyle);
+  if (!hasPB && state.pbs.length > 0) {
+    styleEl.value = state.pbs[0].style;
+    distEl.value = state.pbs[0].dist;
+  }
+
+  const style = styleEl.value;
+  const dist = parseInt(distEl.value);
   const delta = parseFloat(document.getElementById('paceDelta').value) || 1.5;
 
   const pb = state.pbs.find(p => p.style === style);
