@@ -2352,7 +2352,8 @@ window.__acoreIsPro = false; // default sicuro
     const sb = window.supabase.createClient(SB_URL, SB_KEY);
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
-      document.getElementById('loginOverlay').style.display = 'flex';
+      const loginOverlay = document.getElementById('loginOverlay');
+      if (loginOverlay) loginOverlay.style.display = 'flex';
       return;
     }
     const { data: profile } = await sb
