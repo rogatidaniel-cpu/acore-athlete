@@ -864,13 +864,6 @@ nav {
             <div>
               <label class="form-label" data-i18n="labelDist">Distanza</label>
               <select id="paceDist" onchange="renderPaces()">
-                <option value="25">25m</option>
-                <option value="50">50m</option>
-                <option value="100" selected>100m</option>
-                <option value="200">200m</option>
-                <option value="400">400m</option>
-                <option value="800">800m</option>
-                <option value="1500">1500m</option>
               </select>
             </div>
           </div>
@@ -1856,6 +1849,28 @@ function renderPaces() {
   if (!hasPB && state.pbs.length > 0) {
     styleEl.value = state.pbs[0].style;
     distEl.value = state.pbs[0].dist;
+  }
+
+  // Distanze valide per stile
+  const VALID_DISTS = {
+    SL: [25, 50, 100, 200, 400, 800, 1500],
+    DO: [25, 50, 100, 200],
+    RA: [25, 50, 100, 200],
+    FA: [25, 50, 100, 200],
+    MI: [100, 200, 400]
+  };
+
+  // Aggiorna opzioni distanza
+  const validDists = VALID_DISTS[styleEl.value] || VALID_DISTS.SL;
+  const currentDist = parseInt(distEl.value);
+  distEl.innerHTML = validDists.map(d =>
+    `<option value="${d}">${d}m</option>`
+  ).join('');
+  // Mantieni distanza selezionata se ancora valida, altrimenti prima disponibile
+  if (validDists.includes(currentDist)) {
+    distEl.value = currentDist;
+  } else {
+    distEl.value = validDists[0];
   }
 
   const style = styleEl.value;
