@@ -1830,10 +1830,10 @@ function resolveDecay(dist) {
   return 1.0;
 }
 
-function calcZones(pbCs, pool, style, dist, delta) {
-  // Normalizza PB a equivalente 100m prima di applicare decay distanza target
-  const pbDist = dist; // dist è la distanza del PB selezionato
-  const decayPb = DECAY[pbDist] || 1.0;
+function calcZones(pbCs, pool, style, dist, delta, pbDist) {
+  // pbDist = distanza su cui è stato fatto il PB (es. 50m)
+  // dist   = distanza target per cui calcolare i passi (es. 100m, 200m)
+  const decayPb = DECAY[pbDist || dist] || 1.0;
   const base100 = pbCs / decayPb;
   const penaltyPer100 = ((PENALTY[pool]?.[style]) || 0);
   const baseCs = base100 + penaltyPer100 + (delta * 100);
@@ -1867,7 +1867,7 @@ function renderPaces() {
   const pool = pb.pool || '25m'; // usa la vasca del PB
   document.getElementById('paceDistLabel').textContent = `${style} ${dist}m · ${pool}`;
 
-  const zones = calcZones(pb.cs, pool, style, dist, delta);
+  const zones = calcZones(pb.cs, pool, style, dist, delta, pb.dist);
   const zoneLabels = t('zoneLabels');
 
   document.getElementById('paceZones').innerHTML = zones.map(z => `
@@ -1899,7 +1899,7 @@ function renderStress() {
   if (!pb) return;
   const pool = pb.pool || '25m';
 
-  const zones = calcZones(pb.cs, pool, style, dist, delta);
+  const zones = calcZones(pb.cs, pool, style, dist, delta, pb.dist);
   const zone = zones.find(z => z.key === zoneKey);
   if (!zone) return;
 
@@ -1937,7 +1937,7 @@ function calcCustomWorkout() {
 
   blocks.forEach(block => {
     const pb = state.pbs.find(p => p.style === block.style) || state.pbs[0];
-    const zones = calcZones(pb.cs, pool, block.style, block.dist, delta);
+    const zones = calcZones(pb.cs, pool, block.style, block.dist, delta, pb.dist);
     resultDiv.innerHTML += `
       <div class="card" style="margin:0;">
         <div class="card-header" style="background:var(--bg-overlay);">
