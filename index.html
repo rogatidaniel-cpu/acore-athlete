@@ -736,6 +736,128 @@ nav {
   body { padding-bottom: 0; }
   .tab { display: block !important; }
 }
+
+/* ── TRAINING 2.0 ── */
+.session-card {
+  background: var(--bg-surface);
+  border: var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.session-card-header {
+  background: var(--bg-raised);
+  border-bottom: var(--border);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+.session-day-badge {
+  font-family: var(--font-data);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.session-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ink-primary);
+}
+.session-meta {
+  font-size: 0.7rem;
+  color: var(--ink-secondary);
+  font-family: var(--font-data);
+  margin-top: 2px;
+}
+.session-zone-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.session-body { padding: 0; }
+.block-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--bg-raised);
+}
+.block-row:last-child { border-bottom: none; }
+.block-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+  width: 20px;
+  text-align: center;
+}
+.block-content { flex: 1; }
+.block-title { font-size: 0.82rem; font-weight: 700; color: var(--ink-primary); }
+.block-detail {
+  font-size: 0.75rem;
+  color: var(--ink-secondary);
+  font-family: var(--font-data);
+  margin-top: 2px;
+}
+.block-zones { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.block-zone-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--bg-void);
+  border-radius: 6px;
+  font-size: 0.72rem;
+}
+.block-zone-key { font-family: var(--font-data); font-weight: 700; }
+.block-zone-pace { font-family: var(--font-data); color: var(--ink-primary); }
+.block-zone-int { font-family: var(--font-data); color: var(--ink-secondary); }
+.session-stress {
+  padding: 8px 14px;
+  background: var(--bg-void);
+  border-top: var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+}
+.session-stress span { font-family: var(--font-data); color: var(--app-color); font-weight: 700; }
+.day-pill {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--bg-raised);
+  border: var(--border);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font-data);
+}
+.day-pill.selected {
+  background: var(--app-color);
+  color: var(--bg-void);
+  border-color: var(--app-color);
+}
+.week-tab {
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--bg-raised);
+  border: var(--border);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.week-tab.active {
+  background: var(--app-color);
+  color: var(--bg-void);
+  border-color: var(--app-color);
+}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23a855f7'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='18' fill='white'>A</text></svg>">
@@ -917,35 +1039,145 @@ nav {
     </div>
   </section>
 
-  <!-- TAB: ALLENAMENTI -->
+  <!-- TAB: TRAINING 2.0 -->
   <section id="tab-workouts" class="tab">
 
-    <div class="phase-selector">
-      <button class="phase-btn active" onclick="setPhase('base')" id="phaseBase">🟢 Base</button>
-      <button class="phase-btn" onclick="setPhase('build')" id="phaseBuild">🟡 Costruzione</button>
-      <button class="phase-btn" onclick="setPhase('peak')" id="phasePeak">🔴 Picco</button>
-      <button class="phase-btn" onclick="setPhase('taper')" id="phaseTaper">⬜ Rifinitura</button>
+    <!-- PAYWALL BANNER Training (Free: 1 sett non salvata / Pro: multi-sett salvato) -->
+    <div id="trainingPaywallBanner" style="display:none; margin-bottom:14px;">
+      <div class="paywall-banner">
+        <div class="paywall-icon">🔒</div>
+        <div class="paywall-text">
+          <strong id="trainingPaywallTitle">Piano Free</strong>
+          <span id="trainingPaywallDesc">Passa a Pro per piani multi-settimana e storico allenamenti salvato.</span>
+        </div>
+        <button class="btn-pro">Pro 6€/m</button>
+      </div>
     </div>
 
-    <div class="card">
+    <!-- FORM GENERATORE -->
+    <div class="card" id="trainingGeneratorCard">
       <div class="card-header">
-        <span class="card-title" id="phaseTitle">Piano Settimanale</span>
-        <button class="btn btn-sm btn-secondary no-print" onclick="window.print()">📄 PDF</button>
+        <span class="card-title" id="trainingGenTitle">Genera il tuo piano</span>
       </div>
-      <div class="card-body" style="gap:6px;" id="workoutList">
-        <!-- populated by JS -->
+      <div class="card-body">
+
+        <!-- RIGA 1: Stile + Evento target -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label class="form-label" id="lblTrainStyle">Stile principale</label>
+            <select id="trainStyle">
+              <option value="SL">SL — Stile Libero</option>
+              <option value="DO">DO — Dorso</option>
+              <option value="RA">RA — Rana</option>
+              <option value="FA">FA — Farfalla</option>
+              <option value="MI">MI — Misti</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" id="lblTrainGoal">Evento obiettivo</label>
+            <select id="trainGoal">
+              <option value="sprint">Sprint (50–100m)</option>
+              <option value="middle">Mezzofondo (200–400m)</option>
+              <option value="endurance">Fondo (800–1500m)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- RIGA 2: Fase -->
+        <div>
+          <label class="form-label" id="lblTrainPhase">Fase di allenamento</label>
+          <div class="toggle-group" style="flex-wrap:wrap; gap:4px;">
+            <button class="toggle-btn active" id="tpBase"  onclick="setTrainPhase('base')">🟢 Base</button>
+            <button class="toggle-btn" id="tpBuild" onclick="setTrainPhase('build')">🟡 Build</button>
+            <button class="toggle-btn" id="tpPeak"  onclick="setTrainPhase('peak')">🔴 Peak</button>
+            <button class="toggle-btn" id="tpTaper" onclick="setTrainPhase('taper')">⬜ Taper</button>
+          </div>
+        </div>
+
+        <!-- RIGA 3: Giorni disponibili -->
+        <div>
+          <label class="form-label" id="lblTrainDays">Giorni di allenamento</label>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;" id="trainDaysSelector">
+            <!-- generato da JS -->
+          </div>
+        </div>
+
+        <!-- RIGA 4: Vasca -->
+        <div>
+          <label class="form-label" id="lblTrainPool">Vasca</label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="trainPool25m" onclick="setTrainPool('25m')">25m</button>
+            <button class="toggle-btn" id="trainPool50m" onclick="setTrainPool('50m')">50m</button>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <button class="btn btn-acid btn-full" onclick="generatePlan()" id="btnGeneratePlan">
+          ⚡ <span id="btnGenerateLabel">Genera Piano Settimanale</span>
+        </button>
+
+        <!-- Nota paywall -->
+        <div id="trainingFreeNote" style="font-size:0.72rem; color:var(--ink-muted); text-align:center; padding:4px 0;">
+          Piano Free: 1 settimana · non salvato · <span style="color:var(--app-color);">Pro</span>: multi-settimana + storico
+        </div>
+
       </div>
     </div>
 
-    <!-- CUSTOM WORKOUT BUILDER -->
-    <div class="card">
+    <!-- OUTPUT PIANO GENERATO -->
+    <div id="trainingOutput" style="display:none;">
+
+      <!-- INTESTAZIONE PIANO -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div>
+          <div id="planTitle" style="font-weight:700; font-size:1rem; color:var(--ink-primary);"></div>
+          <div id="planMeta" style="font-size:0.72rem; color:var(--ink-secondary); font-family:var(--font-data); margin-top:2px;"></div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-sm btn-secondary" onclick="savePlan()" id="btnSavePlan" style="display:none;">💾 Salva</button>
+          <button class="btn btn-sm btn-secondary" onclick="resetPlan()">✕</button>
+        </div>
+      </div>
+
+      <!-- STRESS SETTIMANALE -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-body" style="padding:12px; gap:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-secondary);" id="weekStressLabel">Carico settimanale</span>
+            <span id="weekStressValue" style="font-family:var(--font-data); font-weight:700; color:var(--app-color);"></span>
+          </div>
+          <div class="stress-bar"><div class="stress-fill" id="weekStressFill" style="width:0%"></div></div>
+          <div id="weekStressDesc" style="font-size:0.7rem; color:var(--ink-muted);"></div>
+        </div>
+      </div>
+
+      <!-- SESSIONI -->
+      <div id="sessionsList"></div>
+
+      <!-- MULTI-WEEK NAVIGATOR (solo Pro) -->
+      <div id="multiWeekNav" style="display:none; margin-top:8px;">
+        <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;" id="weekTabs"></div>
+      </div>
+
+    </div>
+
+    <!-- STORICO PIANI (solo Pro) -->
+    <div id="trainingSavedPlans" style="display:none; margin-top:8px;">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title" id="savedPlansTitle">Piani salvati</span>
+        </div>
+        <div class="card-body" id="savedPlansList" style="gap:8px;"></div>
+      </div>
+    </div>
+
+    <!-- CUSTOM WORKOUT BUILDER (mantenuto invariato) -->
+    <div class="card" style="margin-top:14px;">
       <div class="card-header"><span class="card-title" data-i18n="customWorkout">Calcola Allenamento Personalizzato</span></div>
       <div class="card-body">
         <textarea id="workoutRaw" style="min-height:90px; font-family:var(--font-data); font-size:0.82rem; resize:vertical;" placeholder="Es: 8x50SL&#10;4x100DO&#10;2x200MI"></textarea>
         <button class="btn btn-acid btn-full" onclick="calcCustomWorkout()" data-i18n="btnCalcWorkout">⚡ Calcola Passi Serie</button>
-        <div id="customWorkoutResult" style="display:none; flex-direction:column; gap:8px;">
-          <!-- populated by JS -->
-        </div>
+        <div id="customWorkoutResult" style="display:none; flex-direction:column; gap:8px;"></div>
       </div>
     </div>
 
@@ -1458,7 +1690,17 @@ const i18n = {
     phaseBase:'🟢 Base', phaseBuild:'🟡 Costruzione', phasePeak:'🔴 Picco', phaseTaper:'⬜ Rifinitura',
     days:['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],
     styleNames:{ SL:'Stile Libero', DO:'Dorso', RA:'Rana', FA:'Farfalla', MI:'Misti' },
-    phaseLabel:'Piano Settimanale'
+    phaseLabel:'Piano Settimanale',
+    trainingGenTitle:'Genera il tuo piano', lblTrainStyle:'Stile principale', lblTrainGoal:'Evento obiettivo',
+    lblTrainPhase:'Fase di allenamento', lblTrainDays:'Giorni di allenamento', lblTrainPool:'Vasca',
+    btnGenerateLabel:'Genera Piano Settimanale',
+    trainingFreeNote:'Piano Free: 1 settimana · non salvato · Pro: multi-settimana + storico',
+    trainingPaywallTitle:'Piano Free', trainingPaywallDesc:'Passa a Pro per piani multi-settimana e storico allenamenti salvato.',
+    weekStressLabel:'Carico settimanale', savedPlansTitle:'Piani salvati',
+    goalSprint:'Sprint (50–100m)', goalMiddle:'Mezzofondo (200–400m)', goalEndurance:'Fondo (800–1500m)',
+    blockWarmup:'🔵 Riscaldamento', blockTech:'🟣 Tecnica', blockActivation:'⚡ Attivazione',
+    blockMain:'🟠 Lavoro centrale', blockCool:'⚪ Defaticamento',
+    toastPlanSaved:'✅ Piano salvato', toastPlanDeleted:'🗑 Piano eliminato',
   },
   EN: {
     navProfile:'Profile', navPaces:'Paces', navWorkouts:'Training', navTechnique:'Technique', navRaces:'Races', navAnalytics:'Analytics',
@@ -1495,7 +1737,17 @@ const i18n = {
     phaseBase:'🟢 Base', phaseBuild:'🟡 Build', phasePeak:'🔴 Peak', phaseTaper:'⬜ Taper',
     days:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
     styleNames:{ SL:'Freestyle', DO:'Backstroke', RA:'Breaststroke', FA:'Butterfly', MI:'Individual Medley' },
-    phaseLabel:'Weekly Plan'
+    phaseLabel:'Weekly Plan',
+    trainingGenTitle:'Generate your plan', lblTrainStyle:'Main stroke', lblTrainGoal:'Target event',
+    lblTrainPhase:'Training phase', lblTrainDays:'Training days', lblTrainPool:'Pool',
+    btnGenerateLabel:'Generate Weekly Plan',
+    trainingFreeNote:'Free plan: 1 week · not saved · Pro: multi-week + history',
+    trainingPaywallTitle:'Free Plan', trainingPaywallDesc:'Upgrade to Pro for multi-week plans and saved training history.',
+    weekStressLabel:'Weekly load', savedPlansTitle:'Saved plans',
+    goalSprint:'Sprint (50–100m)', goalMiddle:'Middle distance (200–400m)', goalEndurance:'Endurance (800–1500m)',
+    blockWarmup:'🔵 Warm-up', blockTech:'🟣 Technique', blockActivation:'⚡ Activation',
+    blockMain:'🟠 Main set', blockCool:'⚪ Cool-down',
+    toastPlanSaved:'✅ Plan saved', toastPlanDeleted:'🗑 Plan deleted',
   }
 };
 
@@ -1525,44 +1777,7 @@ const MASTER_REFS = {
 };
 
 // Piani settimanali
-const PLANS = {
-  base: [
-    { sport:'🏊', zone:'A2', dur:'45m', it:'Tecnica — stile principale', en:'Technique — main stroke' },
-    { sport:'🏊', zone:'A2', dur:'50m', it:'Fondo aerobico continuo', en:'Continuous aerobic base' },
-    { sport:'🏃', zone:'A2', dur:'30m', it:'Corsa leggera o cyclette', en:'Light run or cycling' },
-    { sport:'🏊', zone:'B1', dur:'55m', it:'Intervalli soglia 4x200', en:'Threshold intervals 4x200' },
-    { sport:'🏊', zone:'A2', dur:'40m', it:'Recupero attivo in acqua', en:'Active recovery in water' },
-    { sport:'🏊', zone:'B1', dur:'60m', it:'Lungo progressivo', en:'Progressive long set' },
-    { sport:'😴', zone:'—',  dur:'—',  it:'Riposo', en:'Rest' }
-  ],
-  build: [
-    { sport:'🏊', zone:'B1', dur:'50m', it:'Soglia aerobica 8x100', en:'Aerobic threshold 8x100' },
-    { sport:'🏊', zone:'B2', dur:'60m', it:'VO₂max 6x200', en:'VO₂max 6x200' },
-    { sport:'🏃', zone:'B1', dur:'35m', it:'Fartlek corsa', en:'Running fartlek' },
-    { sport:'🏊', zone:'B1', dur:'55m', it:'Variazioni ritmo', en:'Pace variations' },
-    { sport:'🏊', zone:'A2', dur:'45m', it:'Recupero tecnica', en:'Technique recovery' },
-    { sport:'🏊', zone:'B2', dur:'70m', it:'Lungo qualificato', en:'Qualified long set' },
-    { sport:'😴', zone:'—',  dur:'—',  it:'Riposo', en:'Rest' }
-  ],
-  peak: [
-    { sport:'🏊', zone:'B2', dur:'45m', it:'Velocità — sprint 8x50', en:'Speed — sprint 8x50' },
-    { sport:'🏊', zone:'C1', dur:'55m', it:'VO₂max intervals — 5x100', en:'VO₂max intervals — 5x100' },
-    { sport:'🏊', zone:'C1', dur:'50m', it:'Ritmo gara specifico', en:'Specific race pace' },
-    { sport:'🏊', zone:'B1', dur:'40m', it:'Sgambata fluida', en:'Steady flush set' },
-    { sport:'🏊', zone:'A2', dur:'35m', it:'Pre-attivazione', en:'Pre-activation' },
-    { sport:'🏊', zone:'C2', dur:'45m', it:'Sprint + collinare', en:'Sprint + hills' },
-    { sport:'😴', zone:'—',  dur:'—',  it:'Riposo', en:'Rest' }
-  ],
-  taper: [
-    { sport:'🏊', zone:'A2', dur:'30m', it:'Scioltezza tecnica', en:'Technical loosening' },
-    { sport:'🏊', zone:'B1', dur:'35m', it:'Richiamo ritmo gara', en:'Race pace reminder' },
-    { sport:'🏊', zone:'A2', dur:'25m', it:'Nuoto leggero', en:'Light swim' },
-    { sport:'🏊', zone:'A2', dur:'20m', it:'Rifinitura tecnica', en:'Technical refinement' },
-    { sport:'🏊', zone:'B1', dur:'20m', it:'Pre-gara breve', en:'Short pre-race' },
-    { sport:'🏆', zone:'—',  dur:'—',  it:'GARA', en:'RACE DAY' },
-    { sport:'😴', zone:'—',  dur:'—',  it:'Recupero', en:'Recovery' }
-  ]
-};
+// PLANS rimosso — sostituito da Training 2.0
 
 // ══════════════════════════════════════════════════════
 // STATE
@@ -1574,6 +1789,7 @@ let state = {
   pbs: [],
   races: [],
   workouts: [],
+  savedPlans: [],
   phase: 'base',
   completed: {},
   techLogs: [],
@@ -1630,11 +1846,16 @@ function applyLang() {
     const key = el.getAttribute('data-i18n');
     if (i18n[l][key]) el.textContent = i18n[l][key];
   });
-  // Phase buttons
-  document.getElementById('phaseBase').textContent = t('phaseBase');
-  document.getElementById('phaseBuild').textContent = t('phaseBuild');
-  document.getElementById('phasePeak').textContent = t('phasePeak');
-  document.getElementById('phaseTaper').textContent = t('phaseTaper');
+  // Training 2.0 labels
+  ['trainingGenTitle','weekStressLabel','savedPlansTitle'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && i18n[state.lang][id]) el.textContent = i18n[state.lang][id];
+  });
+  const btnGenLabel = document.getElementById('btnGenerateLabel');
+  if (btnGenLabel && i18n[state.lang].btnGenerateLabel)
+    btnGenLabel.textContent = i18n[state.lang].btnGenerateLabel;
+  // Rigenera day selector con la nuova lingua
+  renderDaySelector();
 }
 
 // ══════════════════════════════════════════════════════
@@ -1647,7 +1868,7 @@ function showTab(name) {
   document.getElementById('nav' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
   if (name === 'paces') renderPaces();
   if (name === 'analytics') renderAnalytics();
-  if (name === 'workouts') renderWorkouts();
+  if (name === 'workouts') initTrainingUI();
 }
 
 // ══════════════════════════════════════════════════════
@@ -2010,43 +2231,580 @@ function calcCustomWorkout() {
 }
 
 // ══════════════════════════════════════════════════════
-// WORKOUTS / PIANO
+// TRAINING 2.0 — LIBRERIE DATI
 // ══════════════════════════════════════════════════════
-function setPhase(p) {
-  state.phase = p;
-  saveState();
-  document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('phase' + p.charAt(0).toUpperCase() + p.slice(1)).classList.add('active');
-  renderWorkouts();
+
+const TECH_LIBRARY = {
+  SL: [
+    { it: 'Catch-up drill — braccia a turno, una aspetta l\'altra', en: 'Catch-up drill — one arm waits for the other' },
+    { it: 'One-arm drill — un braccio solo, l\'altro lungo il fianco', en: 'One-arm drill — one arm only, other at side' },
+    { it: 'Nuoto con pugni chiusi — allena la presa con l\'avambraccio', en: 'Fist drill — trains forearm catch' },
+    { it: 'Gomito alto — focus sulla fase di presa alta', en: 'High elbow catch — focus on early vertical forearm' },
+    { it: 'Respiro alternato 3/5 — bilanciamento e ossigenazione', en: 'Bilateral breathing 3/5 — balance and oxygenation' },
+    { it: 'Nuoto con boccaglio — eliminare la rotazione per respirare', en: 'Snorkel drill — remove breathing rotation' },
+  ],
+  DO: [
+    { it: 'Pull con boa tra le gambe — braccia pure', en: 'Pull with buoy — arms only' },
+    { it: 'Gambe con pinne — attivazione e ritmo', en: 'Kick with fins — activation and rhythm' },
+    { it: 'One-arm backstroke — un braccio solo, rotazione accentuata', en: 'One-arm backstroke — emphasize rotation' },
+    { it: 'Finestra — guardare il soffitto fisso durante la bracciata', en: 'Ceiling drill — keep head still, watch ceiling' },
+    { it: 'Braccia lungo il corpo — scivolata e galleggiamento', en: 'Arms-at-side — body position and float' },
+  ],
+  RA: [
+    { it: 'Gambe rana sub — focus sulla propulsione e planata', en: 'Underwater breaststroke kick — propulsion and glide' },
+    { it: 'Braccia rana con pull-buoy — tecnica bracciata pura', en: 'Breaststroke pull with buoy — arms only' },
+    { it: 'Rana su dorso — rilassamento e apertura anche', en: 'Backstroke breaststroke — hip mobility' },
+    { it: 'Timing drill — pausa sulla planata, sentire lo scivolamento', en: 'Glide timing — pause on glide, feel the slide' },
+    { it: '2 gambe 1 bracciata — separare le fasi', en: '2 kicks 1 pull — separate phases' },
+  ],
+  FA: [
+    { it: 'Kick delfino con pinne — ritmo e ondulazione', en: 'Butterfly kick with fins — rhythm and undulation' },
+    { it: 'One-arm butterfly + gambe SL — coordinazione', en: 'One-arm butterfly + freestyle kick — coordination' },
+    { it: 'Braccia farfalla con gambe SL — focus solo sulle braccia', en: 'Butterfly arms with freestyle kick — focus on pull' },
+    { it: 'Delfino laterale — sentire l\'onda del corpo', en: 'Side dolphin — feel the body wave' },
+    { it: 'Entrata a larghezza spalle — correzione dell\'entrata mani', en: 'Shoulder-width entry — hand entry correction' },
+  ],
+  MI: [
+    { it: 'Farfalla + gambe SL — isolare la bracciata FA', en: 'Butterfly arms + freestyle kick — isolate FA pull' },
+    { it: 'Dorso + gambe rana — coordinazione DO/RA', en: 'Backstroke arms + breaststroke kick — DO/RA coordination' },
+    { it: 'Misti a segmenti — 1 vasca per stile concentrato', en: 'Segmented IM — 1 length per stroke focused' },
+    { it: 'Cambio stile ogni 25m — transizioni fluide', en: 'Stroke change every 25m — smooth transitions' },
+  ],
+};
+
+const CENTRAL_MATRIX = {
+  sprint: {
+    base:  [
+      { zone:'A2', reps:12, dist:50,  label:{ it:'Serie aerobica', en:'Aerobic set' } },
+      { zone:'C3', reps:6,  dist:15,  label:{ it:'Velocità pura', en:'Pure speed' } },
+    ],
+    build: [
+      { zone:'B2', reps:6,  dist:100, label:{ it:'VO₂max', en:'VO₂max' } },
+      { zone:'C1', reps:4,  dist:50,  label:{ it:'Ritmo gara', en:'Race pace' } },
+      { zone:'C3', reps:6,  dist:15,  label:{ it:'Velocità pura', en:'Pure speed' } },
+    ],
+    peak:  [
+      { zone:'C1', reps:4,  dist:50,  label:{ it:'Tolleranza lattato', en:'Lactate tolerance' } },
+      { zone:'C2', reps:6,  dist:25,  label:{ it:'Picco alattacido', en:'Alactic peak' } },
+      { zone:'C3', reps:8,  dist:15,  label:{ it:'Velocità massimale', en:'Max speed' } },
+    ],
+    taper: [
+      { zone:'B1', reps:4,  dist:50,  label:{ it:'Soglia mantenimento', en:'Threshold maintenance' } },
+      { zone:'C1', reps:4,  dist:25,  label:{ it:'Attivazione gara', en:'Race activation' } },
+      { zone:'C3', reps:4,  dist:15,  label:{ it:'Velocità', en:'Speed' } },
+    ],
+  },
+  middle: {
+    base:  [
+      { zone:'A2', reps:6,  dist:200, label:{ it:'Endurance aerobica', en:'Aerobic endurance' } },
+    ],
+    build: [
+      { zone:'B1', reps:4,  dist:200, label:{ it:'Soglia aerobica', en:'Aerobic threshold' } },
+      { zone:'B2', reps:4,  dist:100, label:{ it:'Potenza aerobica', en:'Aerobic power' } },
+    ],
+    peak:  [
+      { zone:'B2', reps:2,  dist:400, label:{ it:'Piramide B2', en:'B2 pyramid' }, pyramid: true },
+      { zone:'C1', reps:4,  dist:50,  label:{ it:'Ritmo gara', en:'Race pace' } },
+      { zone:'C3', reps:4,  dist:25,  label:{ it:'Attivazione', en:'Activation' } },
+    ],
+    taper: [
+      { zone:'A2', reps:4,  dist:200, label:{ it:'Volume ridotto A2', en:'Reduced A2 volume' } },
+      { zone:'B1', reps:4,  dist:100, label:{ it:'Soglia leggera', en:'Light threshold' } },
+    ],
+  },
+  endurance: {
+    base:  [
+      { zone:'A2', reps:24, dist:50,  label:{ it:'Volume aerobico', en:'Aerobic volume' } },
+    ],
+    build: [
+      { zone:'A2', reps:1,  dist:100, label:{ it:'Piramide A2/B1', en:'A2/B1 pyramid' }, pyramid: true, sequence:[100,200,400,200,100], zoneSeq:['A2','B1','A2','B1','A2'] },
+    ],
+    peak:  [
+      { zone:'B1', reps:2,  dist:100, label:{ it:'Doppia piramide', en:'Double pyramid' }, pyramid: true, sequence:[100,200,400,200,100], zoneSeq:['A2','B1','B2','B1','A2'] },
+      { zone:'B2', reps:4,  dist:50,  label:{ it:'VO₂max', en:'VO₂max' } },
+      { zone:'C3', reps:4,  dist:25,  label:{ it:'Attivazione', en:'Activation' } },
+    ],
+    taper: [
+      { zone:'A2', reps:6,  dist:200, label:{ it:'Volume ridotto A2', en:'Reduced A2 volume' } },
+      { zone:'B1', reps:4,  dist:100, label:{ it:'Soglia leggera', en:'Light threshold' } },
+    ],
+  },
+};
+
+const TAPER_FACTOR = { base:1.0, build:1.0, peak:1.0, taper:0.5 };
+const WEEK_PROGRESSION = {
+  base:      [1.0, 1.1, 1.2, 1.1],
+  build:     [1.0, 1.1, 1.2, 1.15],
+  peak:      [1.0, 1.05],
+  taper:     [0.7, 0.5],
+};
+
+// ══════════════════════════════════════════════════════
+// TRAINING 2.0 — STATE
+// ══════════════════════════════════════════════════════
+
+let trainState = {
+  phase: 'base',
+  goal: 'sprint',
+  style: 'SL',
+  pool: '25m',
+  days: ['Mon','Wed','Fri'],
+  currentWeek: 0,
+  generatedPlan: null,
+};
+
+const ALL_DAYS_IT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+const ALL_DAYS_EN = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const ALL_DAYS_CODES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// ══════════════════════════════════════════════════════
+// TRAINING 2.0 — INIT UI
+// ══════════════════════════════════════════════════════
+
+function initTrainingUI() {
+  renderDaySelector();
+  updateTrainingPaywall();
 }
 
-function renderWorkouts() {
-  const plan = PLANS[state.phase];
-  const days = t('days');
-  const list = document.getElementById('workoutList');
-  list.innerHTML = plan.map((w, i) => {
-    const id = state.phase + '_d' + i;
-    const done = state.completed[id] || false;
-    const desc = state.lang === 'IT' ? w.it : w.en;
-    return `
-      <div class="day-row ${done ? 'done' : ''}" onclick="toggleDay('${id}')">
-        <div class="day-badge">${days[i]}</div>
-        <div class="day-sport">${w.sport}</div>
-        <div class="day-info">
-          <div class="day-title">${desc}</div>
-          <div class="day-meta">${w.dur} · ${w.zone}</div>
-        </div>
-        <div class="day-check">${done ? '✓' : ''}</div>
-      </div>
-    `;
+function renderDaySelector() {
+  const container = document.getElementById('trainDaysSelector');
+  if (!container) return;
+  const labels = state.lang === 'IT' ? ALL_DAYS_IT : ALL_DAYS_EN;
+  container.innerHTML = ALL_DAYS_CODES.map((code, i) => {
+    const selected = trainState.days.includes(code);
+    return `<button class="day-pill ${selected ? 'selected' : ''}"
+      onclick="toggleTrainDay('${code}')">${labels[i]}</button>`;
   }).join('');
 }
 
-function toggleDay(id) {
-  state.completed[id] = !state.completed[id];
+function toggleTrainDay(code) {
+  if (trainState.days.includes(code)) {
+    if (trainState.days.length > 1) trainState.days = trainState.days.filter(d => d !== code);
+  } else {
+    trainState.days = [...trainState.days, code].sort((a,b) =>
+      ALL_DAYS_CODES.indexOf(a) - ALL_DAYS_CODES.indexOf(b));
+  }
+  renderDaySelector();
+}
+
+function setTrainPhase(phase) {
+  trainState.phase = phase;
+  ['Base','Build','Peak','Taper'].forEach(p => {
+    const el = document.getElementById('tp' + p);
+    if (el) el.classList.toggle('active', p.toLowerCase() === phase);
+  });
+  updateTrainingPaywall();
+}
+
+function setTrainPool(pool) {
+  trainState.pool = pool;
+  ['25m','50m'].forEach(p => {
+    const el = document.getElementById('trainPool' + p);
+    if (el) el.classList.toggle('active', p === pool);
+  });
+}
+
+function updateTrainingPaywall() {
+  const banner = document.getElementById('trainingPaywallBanner');
+  const note   = document.getElementById('trainingFreeNote');
+  const savBtn = document.getElementById('btnSavePlan');
+  const multiW = document.getElementById('multiWeekNav');
+  const saved  = document.getElementById('trainingSavedPlans');
+
+  if (!state.isPro) {
+    if (banner) banner.style.display = 'block';
+    if (note)   note.style.display = 'block';
+    if (savBtn) savBtn.style.display = 'none';
+    if (multiW) multiW.style.display = 'none';
+    if (saved)  saved.style.display = 'none';
+  } else {
+    if (banner) banner.style.display = 'none';
+    if (note)   note.style.display = 'none';
+    if (savBtn) savBtn.style.display = 'inline-flex';
+    if (multiW && trainState.generatedPlan) multiW.style.display = 'block';
+    if (saved)  saved.style.display = 'block';
+    renderSavedPlans();
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// TRAINING 2.0 — GENERATORE
+// ══════════════════════════════════════════════════════
+
+function generatePlan() {
+  trainState.style = document.getElementById('trainStyle').value;
+  trainState.goal  = document.getElementById('trainGoal').value;
+
+  const pb = state.pbs.find(p => p.style === trainState.style) || state.pbs[0];
+  if (!pb) {
+    toast(state.lang === 'IT'
+      ? '⚠️ Aggiungi un PB nel profilo prima di generare il piano'
+      : '⚠️ Add a PB in your profile before generating a plan');
+    return;
+  }
+
+  const totalWeeks = WEEK_PROGRESSION[trainState.phase].length;
+  const plan = [];
+
+  for (let w = 0; w < (state.isPro ? totalWeeks : 1); w++) {
+    const weekFactor = WEEK_PROGRESSION[trainState.phase][w] * TAPER_FACTOR[trainState.phase];
+    const sessions = buildWeek(pb, weekFactor, w);
+    plan.push({ week: w + 1, sessions });
+  }
+
+  trainState.generatedPlan = {
+    id: Date.now(),
+    phase: trainState.phase,
+    goal: trainState.goal,
+    style: trainState.style,
+    pool: trainState.pool,
+    days: [...trainState.days],
+    createdAt: new Date().toISOString().slice(0, 10),
+    weeks: plan,
+  };
+
+  trainState.currentWeek = 0;
+  renderPlanOutput();
+  updateTrainingPaywall();
+}
+
+function buildWeek(pb, factor, weekIndex) {
+  const sessions = [];
+  const centralBlocks = CENTRAL_MATRIX[trainState.goal][trainState.phase];
+
+  trainState.days.forEach((dayCode, i) => {
+    let sessionType = 'main';
+    if (trainState.days.length >= 3) {
+      if (i === 0) sessionType = 'aerobic';
+      else if (i === 1) sessionType = 'technical';
+      else if (i === trainState.days.length - 1 && trainState.goal !== 'endurance') sessionType = 'speed';
+    }
+    const session = buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType);
+    sessions.push(session);
+  });
+
+  return sessions;
+}
+
+function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType) {
+  const lang = state.lang;
+  const pool = trainState.pool;
+  const style = trainState.style;
+
+  const techLib = TECH_LIBRARY[style] || TECH_LIBRARY['SL'];
+  const techIdx1 = (weekIndex * 3 + ALL_DAYS_CODES.indexOf(dayCode)) % techLib.length;
+  const techIdx2 = (techIdx1 + 1) % techLib.length;
+  const techPool = weekIndex % 2 === 0 ? 50 : 25;
+
+  const blocks = [];
+
+  blocks.push({
+    type: 'warmup',
+    icon: '🔵',
+    title: lang === 'IT' ? 'Riscaldamento' : 'Warm-up',
+    detail: `500m ${style} A2`,
+    zones: getPaceZones(pb, pool, style, 100, 'A2'),
+    volume: 500,
+    stressScore: 5,
+  });
+
+  const techReps = techPool === 25 ? 8 : 4;
+  blocks.push({
+    type: 'tech',
+    icon: '🟣',
+    title: lang === 'IT' ? `Tecnica — ${techReps}×${techPool}m` : `Technique — ${techReps}×${techPool}m`,
+    detail: `${techLib[techIdx1][lang === 'IT' ? 'it' : 'en']} · ${techLib[techIdx2][lang === 'IT' ? 'it' : 'en']}`,
+    zones: null,
+    volume: techReps * techPool,
+    stressScore: 2,
+  });
+
+  blocks.push({
+    type: 'activation',
+    icon: '⚡',
+    title: lang === 'IT' ? 'Attivazione — 4×25m' : 'Activation — 4×25m',
+    detail: lang === 'IT' ? '12.5m sprint + 12.5m sciolto' : '12.5m sprint + 12.5m easy',
+    zones: getPaceZones(pb, pool, style, 25, 'C3'),
+    volume: 100,
+    stressScore: 6,
+  });
+
+  let mainBlocks = centralBlocks;
+  if (sessionType === 'aerobic') {
+    mainBlocks = centralBlocks.filter(b => ['A2','B1'].includes(b.zone));
+    if (!mainBlocks.length) mainBlocks = [centralBlocks[0]];
+  } else if (sessionType === 'technical') {
+    mainBlocks = centralBlocks.filter(b => ['A2','B1','B2'].includes(b.zone));
+    if (!mainBlocks.length) mainBlocks = [centralBlocks[0]];
+  } else if (sessionType === 'speed') {
+    mainBlocks = centralBlocks.filter(b => ['B2','C1','C2','C3'].includes(b.zone));
+    if (!mainBlocks.length) mainBlocks = [centralBlocks[centralBlocks.length-1]];
+  }
+
+  let mainVolume = 0;
+
+  mainBlocks.forEach(blk => {
+    if (blk.pyramid && blk.sequence) {
+      const seq = blk.sequence;
+      const zseq = blk.zoneSeq || seq.map(() => blk.zone);
+      seq.forEach((d, si) => {
+        const reps = Math.max(1, Math.round(factor));
+        mainVolume += reps * d;
+        const zInfo = ZONES_INFO[zseq[si]] || ZONES_INFO['A2'];
+        blocks.push({
+          type: 'main', icon: '🟠',
+          title: `${reps}×${d}m ${style}`,
+          detail: `${zseq[si]} — ${lang === 'IT' ? blk.label.it : blk.label.en}`,
+          zones: getPaceZones(pb, pool, style, d, zseq[si]),
+          volume: reps * d,
+          stressScore: Math.round((d / 100) * reps * zInfo.stressFactor),
+        });
+      });
+    } else {
+      const reps = Math.max(1, Math.round(blk.reps * factor));
+      const vol = reps * blk.dist;
+      mainVolume += vol;
+      const zInfo = ZONES_INFO[blk.zone] || ZONES_INFO['A2'];
+      blocks.push({
+        type: 'main', icon: '🟠',
+        title: `${reps}×${blk.dist}m ${style}`,
+        detail: `${blk.zone} — ${lang === 'IT' ? blk.label.it : blk.label.en}`,
+        zones: getPaceZones(pb, pool, style, blk.dist, blk.zone),
+        volume: vol,
+        stressScore: Math.round((blk.dist / 100) * reps * zInfo.stressFactor),
+      });
+    }
+  });
+
+  const totalSoFar = 500 + techReps * techPool + 100 + mainVolume;
+  let coolDist = 100;
+  if (totalSoFar >= 2500) coolDist = 400;
+  else if (totalSoFar >= 1500) coolDist = 300;
+  else if (totalSoFar >= 1000) coolDist = 200;
+
+  blocks.push({
+    type: 'cool', icon: '⚪',
+    title: lang === 'IT' ? `Defaticamento — ${coolDist}m` : `Cool-down — ${coolDist}m`,
+    detail: `${style} A2 — ${lang === 'IT' ? 'scioltezza assoluta' : 'easy, relax'}`,
+    zones: getPaceZones(pb, pool, style, 100, 'A2'),
+    volume: coolDist,
+    stressScore: 1,
+  });
+
+  const totalVolume = blocks.reduce((s, b) => s + b.volume, 0);
+  const totalStress = blocks.reduce((s, b) => s + b.stressScore, 0);
+  const dayLabels = state.lang === 'IT' ? ALL_DAYS_IT : ALL_DAYS_EN;
+  const dayLabel = dayLabels[ALL_DAYS_CODES.indexOf(dayCode)] || dayCode;
+
+  return { day: dayCode, dayLabel, title: buildSessionTitle(sessionType, trainState.goal), blocks, totalVolume, totalStress };
+}
+
+function buildSessionTitle(sessionType, goal) {
+  const lang = state.lang;
+  const map = {
+    aerobic:   { IT:'Aerobico di Base', EN:'Aerobic Base' },
+    technical: { IT:'Tecnica + Soglia', EN:'Technique + Threshold' },
+    speed:     { IT:'Velocità', EN:'Speed' },
+    main: {
+      sprint:    { IT:'Sprint & Velocità', EN:'Sprint & Speed' },
+      middle:    { IT:'Mezzofondo', EN:'Middle Distance' },
+      endurance: { IT:'Endurance', EN:'Endurance' },
+    },
+  };
+  if (sessionType === 'main') return map.main[goal][lang === 'IT' ? 'IT' : 'EN'];
+  return map[sessionType][lang === 'IT' ? 'IT' : 'EN'];
+}
+
+const ZONES_INFO = {
+  A2: { coef:1.18, color:'var(--z-a2)', stressFactor:1 },
+  B1: { coef:1.10, color:'var(--z-b1)', stressFactor:3 },
+  B2: { coef:1.04, color:'var(--z-b2)', stressFactor:5 },
+  C1: { coef:1.00, color:'var(--z-c1)', stressFactor:8 },
+  C2: { coef:0.98, color:'var(--z-c2)', stressFactor:12 },
+  C3: { coef:0.95, color:'var(--z-c2)', stressFactor:14 },
+};
+
+function getPaceZones(pb, pool, style, dist, targetZone) {
+  const allZones = calcZones(pb.cs, pool, style, dist, 1.5, pb.dist);
+  if (targetZone === 'C3') {
+    const c2 = allZones.find(z => z.key === 'C2');
+    if (c2) {
+      const paceCs = Math.round(c2.paceCs * 0.97);
+      return [{ key:'C3', color:'var(--z-c2)', pace: formatCs(paceCs), int:'2\'00"' }];
+    }
+  }
+  const zone = allZones.find(z => z.key === targetZone);
+  return zone ? [zone] : allZones.slice(0, 1);
+}
+
+// ══════════════════════════════════════════════════════
+// TRAINING 2.0 — RENDER
+// ══════════════════════════════════════════════════════
+
+function renderPlanOutput() {
+  const plan = trainState.generatedPlan;
+  if (!plan) return;
+
+  document.getElementById('trainingOutput').style.display = 'block';
+  document.getElementById('trainingGeneratorCard').style.display = 'none';
+
+  const phaseLabels = { base:{IT:'Base',EN:'Base'}, build:{IT:'Costruzione',EN:'Build'}, peak:{IT:'Picco',EN:'Peak'}, taper:{IT:'Tapering',EN:'Taper'} };
+  const goalLabels  = { sprint:{IT:'Sprint',EN:'Sprint'}, middle:{IT:'Mezzofondo',EN:'Middle Distance'}, endurance:{IT:'Fondo',EN:'Endurance'} };
+  const l = state.lang === 'IT' ? 'IT' : 'EN';
+
+  document.getElementById('planTitle').textContent =
+    `${plan.style} · ${goalLabels[plan.goal][l]} · ${phaseLabels[plan.phase][l]}`;
+  document.getElementById('planMeta').textContent =
+    `${plan.days.length} ${state.lang === 'IT' ? 'giorni/settimana' : 'days/week'} · ${plan.pool} · ${plan.createdAt}`;
+
+  if (state.isPro) {
+    document.getElementById('btnSavePlan').style.display = 'inline-flex';
+    renderMultiWeekNav(plan);
+  }
+
+  renderWeekSessions(plan.weeks[trainState.currentWeek].sessions);
+}
+
+function renderMultiWeekNav(plan) {
+  const nav  = document.getElementById('multiWeekNav');
+  const tabs = document.getElementById('weekTabs');
+  if (!nav || !tabs) return;
+  nav.style.display = 'block';
+  tabs.innerHTML = plan.weeks.map((w, i) =>
+    `<button class="week-tab ${i === trainState.currentWeek ? 'active' : ''}" onclick="switchWeek(${i})">
+      ${state.lang === 'IT' ? 'Sett.' : 'Wk'} ${w.week}
+    </button>`
+  ).join('');
+}
+
+function switchWeek(idx) {
+  trainState.currentWeek = idx;
+  renderPlanOutput();
+}
+
+function renderWeekSessions(sessions) {
+  const list = document.getElementById('sessionsList');
+  if (!list) return;
+
+  let totalVol = 0, totalStress = 0;
+  sessions.forEach(s => { totalVol += s.totalVolume; totalStress += s.totalStress; });
+
+  const maxStress = sessions.length * 100;
+  const pct = Math.min(100, Math.round((totalStress / maxStress) * 100));
+  document.getElementById('weekStressValue').textContent = `${totalVol}m · ${totalStress} pts`;
+  document.getElementById('weekStressFill').style.width = pct + '%';
+
+  let stressLabel = '';
+  if (pct < 35)      stressLabel = state.lang === 'IT' ? 'Carico leggero' : 'Light load';
+  else if (pct < 60) stressLabel = state.lang === 'IT' ? 'Carico moderato' : 'Moderate load';
+  else if (pct < 80) stressLabel = state.lang === 'IT' ? 'Carico alto' : 'High load';
+  else               stressLabel = state.lang === 'IT' ? 'Carico massimale' : 'Maximal load';
+  document.getElementById('weekStressDesc').textContent = stressLabel;
+
+  list.innerHTML = sessions.map(s => renderSessionCard(s)).join('');
+}
+
+function renderSessionCard(session) {
+  const blocksHTML = session.blocks.map(b => {
+    const zoneRows = b.zones
+      ? b.zones.map(z => `
+          <div class="block-zone-row">
+            <span class="block-zone-key" style="color:${z.color}">${z.key}</span>
+            <span class="block-zone-pace">${z.pace} /100m</span>
+            <span class="block-zone-int">@ ${z.int}</span>
+          </div>`).join('')
+      : '';
+    return `
+      <div class="block-row">
+        <div class="block-icon">${b.icon}</div>
+        <div class="block-content">
+          <div class="block-title">${b.title}</div>
+          <div class="block-detail">${b.detail}</div>
+          ${zoneRows ? `<div class="block-zones">${zoneRows}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="session-card">
+      <div class="session-card-header">
+        <div>
+          <div class="session-day-badge">${session.dayLabel}</div>
+          <div class="session-title">${session.title}</div>
+          <div class="session-meta">${session.totalVolume}m</div>
+        </div>
+        <div style="font-family:var(--font-data); font-size:0.72rem; color:var(--app-color); font-weight:700;">
+          ${session.totalStress} pts
+        </div>
+      </div>
+      <div class="session-body">${blocksHTML}</div>
+      <div class="session-stress">
+        <span>Hydro-Load</span>
+        <span>${session.totalStress} pts</span>
+      </div>
+    </div>`;
+}
+
+function resetPlan() {
+  trainState.generatedPlan = null;
+  document.getElementById('trainingOutput').style.display = 'none';
+  document.getElementById('trainingGeneratorCard').style.display = 'block';
+}
+
+// ══════════════════════════════════════════════════════
+// TRAINING 2.0 — SALVATAGGIO (Pro)
+// ══════════════════════════════════════════════════════
+
+async function savePlan() {
+  if (!state.isPro) return;
+  const plan = trainState.generatedPlan;
+  if (!plan) return;
+  if (!state.savedPlans) state.savedPlans = [];
+  if (!state.savedPlans.find(p => p.id === plan.id)) {
+    state.savedPlans.push(plan);
+    saveState();
+    toast(t('toastPlanSaved'));
+    renderSavedPlans();
+  }
+}
+
+function renderSavedPlans() {
+  if (!state.isPro) return;
+  const container = document.getElementById('savedPlansList');
+  if (!container) return;
+  const plans = state.savedPlans || [];
+  if (!plans.length) {
+    container.innerHTML = `<div style="color:var(--ink-muted); font-size:0.82rem; text-align:center; padding:12px;">
+      ${state.lang === 'IT' ? 'Nessun piano salvato.' : 'No saved plans.'}
+    </div>`;
+    return;
+  }
+  container.innerHTML = plans.slice().reverse().map(p => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:var(--border);">
+      <div>
+        <div style="font-weight:600; font-size:0.85rem;">${p.style} · ${p.goal} · ${p.phase}</div>
+        <div style="font-size:0.72rem; color:var(--ink-secondary); font-family:var(--font-data);">${p.createdAt} · ${p.days.length} giorni</div>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-sm btn-secondary" onclick="loadSavedPlan(${p.id})">${state.lang === 'IT' ? 'Apri' : 'Open'}</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSavedPlan(${p.id})">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function loadSavedPlan(id) {
+  const plan = (state.savedPlans || []).find(p => p.id === id);
+  if (!plan) return;
+  trainState.generatedPlan = plan;
+  trainState.currentWeek = 0;
+  renderPlanOutput();
+}
+
+function deleteSavedPlan(id) {
+  state.savedPlans = (state.savedPlans || []).filter(p => p.id !== id);
   saveState();
-  checkPaywall();
-  renderWorkouts();
+  toast(t('toastPlanDeleted'));
+  renderSavedPlans();
 }
 
 // ══════════════════════════════════════════════════════
@@ -2371,9 +3129,9 @@ async function wipeAll() {
 // ══════════════════════════════════════════════════════
 function renderAll() {
   renderProfile();
-  renderWorkouts();
   renderRaces();
   updatePaywallBanners();
+  initTrainingUI();
   applyLang();
 }
 
