@@ -2611,23 +2611,25 @@ function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType
       });
     } else {
       let reps, dist;
+      let resolvedBlk;
       if (blk.useWeeklyVolume) {
         const weekVol = WEEKLY_VOLUME[trainState.phase][weekIndex] || WEEKLY_VOLUME[trainState.phase][0];
         reps = weekVol.mainReps;
         dist = weekVol.mainDist;
-        blk = { ...blk, zone: weekVol.mainZone, dist: weekVol.mainDist };
+        resolvedBlk = { ...blk, zone: weekVol.mainZone, dist: weekVol.mainDist };
       } else {
         reps = Math.max(1, Math.round(blk.reps * factor));
         dist = blk.dist;
+        resolvedBlk = blk;
       }
       const vol = reps * dist;
       mainVolume += vol;
-      const zInfo = ZONES_INFO[blk.zone] || ZONES_INFO['A2'];
+      const zInfo = ZONES_INFO[resolvedBlk.zone] || ZONES_INFO['A2'];
       blocks.push({
         type: 'main', icon: '🟠',
         title: `${reps}×${dist}m ${style}`,
-        detail: `${blk.zone} — ${lang === 'IT' ? blk.label.it : blk.label.en}`,
-        zones: getPaceZones(pb, pool, style, dist, blk.zone),
+        detail: `${resolvedBlk.zone} — ${lang === 'IT' ? resolvedBlk.label.it : resolvedBlk.label.en}`,
+        zones: getPaceZones(pb, pool, style, dist, resolvedBlk.zone),
         volume: vol,
         stressScore: Math.round((dist / 100) * reps * zInfo.stressFactor),
       });
