@@ -938,7 +938,10 @@ nav {
           <strong id="pbPaywallTitle">Piano Free — Limite raggiunto</strong>
           <span id="pbPaywallDesc">Passa a Pro per sessioni illimitate, storico completo e analytics avanzati.</span>
         </div>
-        <button class="btn-pro">Pro 6€/m</button>
+        <a href="https://aquacoreai.lemonsqueezy.com/checkout/buy/7f3f1675-ed15-4fe5-9d53-48065692a3ed"
+           target="_blank" rel="noopener" class="btn-pro" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+          Pro 6€/m
+        </a>
       </div>
     </div>
     <div class="card" id="pbCard" style="display:none;">
@@ -1050,7 +1053,10 @@ nav {
           <strong id="trainingPaywallTitle">Piano Free</strong>
           <span id="trainingPaywallDesc">Passa a Pro per piani multi-settimana e storico allenamenti salvato.</span>
         </div>
-        <button class="btn-pro">Pro 6€/m</button>
+        <a href="https://aquacoreai.lemonsqueezy.com/checkout/buy/7f3f1675-ed15-4fe5-9d53-48065692a3ed"
+           target="_blank" rel="noopener" class="btn-pro" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+          Pro 6€/m
+        </a>
       </div>
     </div>
 
@@ -1394,7 +1400,10 @@ nav {
           <strong id="racePaywallTitle">Piano Free — Limite raggiunto</strong>
           <span id="racePaywallDesc">Passa a Pro per gare illimitate, storico risultati e analytics.</span>
         </div>
-        <button class="btn-pro">Pro 6€/m</button>
+        <a href="https://aquacoreai.lemonsqueezy.com/checkout/buy/7f3f1675-ed15-4fe5-9d53-48065692a3ed"
+           target="_blank" rel="noopener" class="btn-pro" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+          Pro 6€/m
+        </a>
       </div>
     </div>
 
@@ -1644,7 +1653,10 @@ nav {
   <div style="font-size:2rem;">🔒</div>
   <div style="font-weight:700; color:#e2e8f0; margin:8px 0 4px;" id="paywallBannerTitle"></div>
   <div style="font-size:.85rem; color:#94a3b8; margin-bottom:12px;" id="paywallBannerDesc"></div>
-  <button class="btn-pro" onclick="alert('Upgrade a Pro — coming soon')">Upgrade a Pro</button>
+  <a href="https://aquacoreai.lemonsqueezy.com/checkout/buy/7f3f1675-ed15-4fe5-9d53-48065692a3ed"
+     target="_blank" rel="noopener" class="btn-pro" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+    Upgrade a Pro
+  </a>
 </div>
 
 <!-- TOAST -->
@@ -2272,71 +2284,108 @@ const TECH_LIBRARY = {
   ],
 };
 
+// ── VOLUME MATRIX — basata su 3 stagioni reali di allenamento ──
+// Ogni fase ha reps fissi per settimana. Il generatore usa la settimana corrente
+// per scegliere il volume, non un moltiplicatore float.
+const WEEKLY_VOLUME = {
+  base:  [
+    // sett1: introduzione
+    { mainReps: 16, mainDist: 50,  mainZone: 'A2' },
+    // sett2: progressione
+    { mainReps: 24, mainDist: 50,  mainZone: 'A2' },
+    // sett3: carico
+    { mainReps: 32, mainDist: 50,  mainZone: 'A2' },
+    // sett4: picco Base
+    { mainReps: 36, mainDist: 50,  mainZone: 'A2' },
+  ],
+  build: [
+    // sett1: switch a 100m
+    { mainReps: 20, mainDist: 100, mainZone: 'A2' },
+    // sett2: incremento
+    { mainReps: 24, mainDist: 100, mainZone: 'B1' },
+    // sett3: switch a 200m
+    { mainReps: 10, mainDist: 200, mainZone: 'B1' },
+    // sett4: picco Build
+    { mainReps: 12, mainDist: 200, mainZone: 'B1' },
+  ],
+  peak:  [
+    // sett1: broken C1, volume contenuto
+    { mainReps: 8,  mainDist: 75,  mainZone: 'C1', broken: true },
+    // sett2: picco Peak — massimo 1000m
+    { mainReps: 20, mainDist: 50,  mainZone: 'C1' },
+  ],
+  taper: [
+    // sett1: volume dimezzato, qualità
+    { mainReps: 8,  mainDist: 50,  mainZone: 'C1' },
+    // sett2: pre-gara, minimo
+    { mainReps: 4,  mainDist: 50,  mainZone: 'C1' },
+  ],
+};
+
+// Blocchi accessori per zona (attivazione, sprint brevi) — invariati per settimana
 const CENTRAL_MATRIX = {
   sprint: {
     base:  [
-      { zone:'A2', reps:12, dist:50,  label:{ it:'Serie aerobica', en:'Aerobic set' } },
-      { zone:'C3', reps:6,  dist:15,  label:{ it:'Velocità pura', en:'Pure speed' } },
+      { zone:'A2', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Serie aerobica', en:'Aerobic set' } },
+      { zone:'C3', reps:6,   dist:15,   label:{ it:'Velocità pura', en:'Pure speed' } },
     ],
     build: [
-      { zone:'B2', reps:6,  dist:100, label:{ it:'VO₂max', en:'VO₂max' } },
-      { zone:'C1', reps:4,  dist:50,  label:{ it:'Ritmo gara', en:'Race pace' } },
-      { zone:'C3', reps:6,  dist:15,  label:{ it:'Velocità pura', en:'Pure speed' } },
+      { zone:'B2', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Soglia/VO₂max', en:'Threshold/VO₂max' } },
+      { zone:'C1', reps:4,   dist:50,   label:{ it:'Ritmo gara', en:'Race pace' } },
+      { zone:'C3', reps:6,   dist:15,   label:{ it:'Velocità pura', en:'Pure speed' } },
     ],
     peak:  [
-      { zone:'C1', reps:4,  dist:50,  label:{ it:'Tolleranza lattato', en:'Lactate tolerance' } },
-      { zone:'C2', reps:6,  dist:25,  label:{ it:'Picco alattacido', en:'Alactic peak' } },
-      { zone:'C3', reps:8,  dist:15,  label:{ it:'Velocità massimale', en:'Max speed' } },
+      { zone:'C1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Tolleranza lattato', en:'Lactate tolerance' } },
+      { zone:'C2', reps:6,   dist:25,   label:{ it:'Picco alattacido', en:'Alactic peak' } },
+      { zone:'C3', reps:8,   dist:15,   label:{ it:'Velocità massimale', en:'Max speed' } },
     ],
     taper: [
-      { zone:'B1', reps:4,  dist:50,  label:{ it:'Soglia mantenimento', en:'Threshold maintenance' } },
-      { zone:'C1', reps:4,  dist:25,  label:{ it:'Attivazione gara', en:'Race activation' } },
-      { zone:'C3', reps:4,  dist:15,  label:{ it:'Velocità', en:'Speed' } },
+      { zone:'C1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Mantenimento gara', en:'Race maintenance' } },
+      { zone:'C3', reps:4,   dist:15,   label:{ it:'Velocità', en:'Speed' } },
     ],
   },
   middle: {
     base:  [
-      { zone:'A2', reps:6,  dist:200, label:{ it:'Endurance aerobica', en:'Aerobic endurance' } },
+      { zone:'A2', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Volume aerobico', en:'Aerobic volume' } },
     ],
     build: [
-      { zone:'B1', reps:4,  dist:200, label:{ it:'Soglia aerobica', en:'Aerobic threshold' } },
-      { zone:'B2', reps:4,  dist:100, label:{ it:'Potenza aerobica', en:'Aerobic power' } },
+      { zone:'B1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Soglia aerobica', en:'Aerobic threshold' } },
+      { zone:'B2', reps:4,   dist:100,  label:{ it:'Potenza aerobica', en:'Aerobic power' } },
     ],
     peak:  [
-      { zone:'B2', reps:2,  dist:400, label:{ it:'Piramide B2', en:'B2 pyramid' }, pyramid: true },
-      { zone:'C1', reps:4,  dist:50,  label:{ it:'Ritmo gara', en:'Race pace' } },
-      { zone:'C3', reps:4,  dist:25,  label:{ it:'Attivazione', en:'Activation' } },
+      { zone:'C1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Ritmo gara medio', en:'Middle distance race pace' } },
+      { zone:'C2', reps:4,   dist:25,   label:{ it:'Attivazione', en:'Activation' } },
     ],
     taper: [
-      { zone:'A2', reps:4,  dist:200, label:{ it:'Volume ridotto A2', en:'Reduced A2 volume' } },
-      { zone:'B1', reps:4,  dist:100, label:{ it:'Soglia leggera', en:'Light threshold' } },
+      { zone:'B1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Soglia leggera', en:'Light threshold' } },
+      { zone:'C1', reps:4,   dist:50,   label:{ it:'Attivazione gara', en:'Race activation' } },
     ],
   },
   endurance: {
     base:  [
-      { zone:'A2', reps:24, dist:50,  label:{ it:'Volume aerobico', en:'Aerobic volume' } },
+      { zone:'A2', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Volume aerobico', en:'Aerobic volume' } },
     ],
     build: [
-      { zone:'A2', reps:1,  dist:100, label:{ it:'Piramide A2/B1', en:'A2/B1 pyramid' }, pyramid: true, sequence:[100,200,400,200,100], zoneSeq:['A2','B1','A2','B1','A2'] },
+      { zone:'B1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Soglia aerobica', en:'Aerobic threshold' } },
+      { zone:'B2', reps:4,   dist:100,  label:{ it:'VO₂max', en:'VO₂max' } },
     ],
     peak:  [
-      { zone:'B1', reps:2,  dist:100, label:{ it:'Doppia piramide', en:'Double pyramid' }, pyramid: true, sequence:[100,200,400,200,100], zoneSeq:['A2','B1','B2','B1','A2'] },
-      { zone:'B2', reps:4,  dist:50,  label:{ it:'VO₂max', en:'VO₂max' } },
-      { zone:'C3', reps:4,  dist:25,  label:{ it:'Attivazione', en:'Activation' } },
+      { zone:'C1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Resistenza alla velocità', en:'Speed endurance' } },
+      { zone:'B2', reps:4,   dist:50,   label:{ it:'VO₂max breve', en:'Short VO₂max' } },
     ],
     taper: [
-      { zone:'A2', reps:6,  dist:200, label:{ it:'Volume ridotto A2', en:'Reduced A2 volume' } },
-      { zone:'B1', reps:4,  dist:100, label:{ it:'Soglia leggera', en:'Light threshold' } },
+      { zone:'A2', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Volume ridotto', en:'Reduced volume' } },
+      { zone:'B1', reps:4,   dist:100,  label:{ it:'Soglia leggera', en:'Light threshold' } },
     ],
   },
 };
 
-const TAPER_FACTOR = { base:1.0, build:1.0, peak:1.0, taper:0.5 };
+const TAPER_FACTOR = { base:1.0, build:1.0, peak:1.0, taper:1.0 };
 const WEEK_PROGRESSION = {
-  base:      [1.0, 1.1, 1.2, 1.1],
-  build:     [1.0, 1.1, 1.2, 1.15],
-  peak:      [1.0, 1.05],
-  taper:     [0.7, 0.5],
+  base:  [1.0, 1.0, 1.0, 1.0],
+  build: [1.0, 1.0, 1.0, 1.0],
+  peak:  [1.0, 1.0],
+  taper: [1.0, 1.0],
 };
 
 // ══════════════════════════════════════════════════════
@@ -2561,17 +2610,26 @@ function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType
         });
       });
     } else {
-      const reps = Math.max(1, Math.round(blk.reps * factor));
-      const vol = reps * blk.dist;
+      let reps, dist;
+      if (blk.useWeeklyVolume) {
+        const weekVol = WEEKLY_VOLUME[trainState.phase][weekIndex] || WEEKLY_VOLUME[trainState.phase][0];
+        reps = weekVol.mainReps;
+        dist = weekVol.mainDist;
+        blk = { ...blk, zone: weekVol.mainZone, dist: weekVol.mainDist };
+      } else {
+        reps = Math.max(1, Math.round(blk.reps * factor));
+        dist = blk.dist;
+      }
+      const vol = reps * dist;
       mainVolume += vol;
       const zInfo = ZONES_INFO[blk.zone] || ZONES_INFO['A2'];
       blocks.push({
         type: 'main', icon: '🟠',
-        title: `${reps}×${blk.dist}m ${style}`,
+        title: `${reps}×${dist}m ${style}`,
         detail: `${blk.zone} — ${lang === 'IT' ? blk.label.it : blk.label.en}`,
-        zones: getPaceZones(pb, pool, style, blk.dist, blk.zone),
+        zones: getPaceZones(pb, pool, style, dist, blk.zone),
         volume: vol,
-        stressScore: Math.round((blk.dist / 100) * reps * zInfo.stressFactor),
+        stressScore: Math.round((dist / 100) * reps * zInfo.stressFactor),
       });
     }
   });
