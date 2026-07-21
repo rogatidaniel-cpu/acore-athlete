@@ -28,6 +28,7 @@
   --font-data: 'DM Mono', monospace;
   --border: 1px solid #1e293b;
   --radius: 12px;
+  --success: #34d399;
   --z-a2: #34d399;
   --z-b1: #fbbf24;
   --z-b2: #f97316;
@@ -138,7 +139,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 .legal-links { font-family: var(--font-data); font-size: 0.58rem; letter-spacing: 0.02em; margin-top: 4px; }
 .legal-links a { color: var(--ink-secondary); text-decoration: none; }
 .legal-links a:hover { color: var(--ink-primary); }
-.header-right { display: flex; gap: 8px; align-items: center; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
 .lang-btn {
   background: var(--bg-raised);
   border: var(--border);
@@ -255,6 +256,24 @@ nav {
 .btn-danger:hover { background: rgba(239,68,68,0.2); }
 .btn-full { width: 100%; }
 .btn-sm { padding: 6px 10px; font-size: 0.75rem; }
+.btn-sync { background: rgba(168,85,247,0.08); color: var(--app-color); border: 1px solid var(--app-color-border); font-size: 0.72rem; }
+.btn-sync:hover { background: rgba(168,85,247,0.15); }
+
+/* ── SYNC PROVIDER ── */
+.sync-provider {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 10px; background: var(--bg-surface);
+  border-radius: 8px; border: var(--border);
+}
+.sync-provider-info { display: flex; align-items: center; gap: 10px; }
+.sync-provider-logo {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-family: var(--font-data); font-weight: 700;
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+.sync-provider-name { font-weight: 500; font-size: 0.82rem; }
+.sync-provider-sub { font-family: var(--font-data); font-size: 0.58rem; color: var(--ink-muted); margin-top: 1px; }
 
 /* ── TOGGLE GROUP ── */
 .toggle-group {
@@ -735,7 +754,7 @@ nav {
 }
 
 @media print {
-  nav, .header-right, .no-print { display: none !important; }
+  nav, .header-actions, .no-print { display: none !important; }
   body { padding-bottom: 0; }
   .tab { display: block !important; }
 }
@@ -884,8 +903,8 @@ nav {
       </div>
     </div>
   </a>
-  <div class="header-right">
-    <div class="toggle-group" style="padding:2px; gap:2px;">
+  <div class="header-actions">
+    <div class="toggle-group">
       <button class="toggle-btn" id="btnIT" onclick="setLang('IT')">IT</button>
       <button class="toggle-btn active" id="btnEN" onclick="setLang('EN')">EN</button>
     </div>
@@ -959,6 +978,25 @@ nav {
       <div class="card-body" style="padding:12px;">
         <div class="pb-grid" id="pbGrid">
           <!-- populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- SYNC -->
+    <div class="card" id="stravaSyncCard">
+      <div class="card-header">
+        <span class="card-title" data-i18n="stravaSyncTitle">Sincronizzazione</span>
+      </div>
+      <div class="card-body">
+        <div class="sync-provider">
+          <div class="sync-provider-info">
+            <div class="sync-provider-logo" style="background:rgba(252,76,2,0.1);color:#fc4c02;border:1px solid rgba(252,76,2,0.2);">STR</div>
+            <div>
+              <div class="sync-provider-name">Strava</div>
+              <div class="sync-provider-sub" id="stravaStatusSub">Non connesso</div>
+            </div>
+          </div>
+          <button class="btn btn-sync" id="stravaConnectBtn" onclick="connectStrava()">Connetti</button>
         </div>
       </div>
     </div>
@@ -1720,6 +1758,7 @@ const i18n = {
     blockWarmup:'🔵 Riscaldamento', blockTech:'🟣 Tecnica', blockActivation:'⚡ Attivazione',
     blockMain:'🟠 Lavoro centrale', blockCool:'⚪ Defaticamento',
     toastPlanSaved:'✅ Piano salvato', toastPlanDeleted:'🗑 Piano eliminato',
+    stravaSyncTitle:'Sincronizzazione', toastStravaDenied:'⚠️ Connessione Strava annullata',
   },
   EN: {
     navProfile:'Profile', navPaces:'Paces', navWorkouts:'Training', navTechnique:'Technique', navRaces:'Races', navAnalytics:'Analytics',
@@ -1767,6 +1806,7 @@ const i18n = {
     blockWarmup:'🔵 Warm-up', blockTech:'🟣 Technique', blockActivation:'⚡ Activation',
     blockMain:'🟠 Main set', blockCool:'⚪ Cool-down',
     toastPlanSaved:'✅ Plan saved', toastPlanDeleted:'🗑 Plan deleted',
+    stravaSyncTitle:'Sync', toastStravaDenied:'⚠️ Strava connection cancelled',
   }
 };
 
@@ -3350,6 +3390,103 @@ async function loginWithGoogle() {
   }
 }
 
+// ══════════════════════════════════════════════════════
+// STRAVA OAUTH INTEGRATION
+// ══════════════════════════════════════════════════════
+const STRAVA_CLIENT_ID = '266671';
+const STRAVA_REDIRECT_URI = 'https://athlete.getaquacore.com';
+const STRAVA_EDGE_FUNCTION_URL = 'https://vqfzywjiyzpwhzqwixex.supabase.co/functions/v1/strava-oauth-exchange';
+
+function connectStrava() {
+  const authUrl = `https://www.strava.com/oauth/authorize` +
+    `?client_id=${STRAVA_CLIENT_ID}` +
+    `&redirect_uri=${encodeURIComponent(STRAVA_REDIRECT_URI)}` +
+    `&response_type=code` +
+    `&approval_prompt=auto` +
+    `&scope=activity:read_all`;
+  window.location.href = authUrl;
+}
+
+async function handleStravaCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const error = params.get('error');
+
+  if (error) {
+    window.history.replaceState({}, '', window.location.pathname);
+    toast(t('toastStravaDenied'));
+    return;
+  }
+
+  if (!code) return;
+
+  window.history.replaceState({}, '', window.location.pathname);
+
+  try {
+    const { data: { session } } = await window.__sb.auth.getSession();
+    if (!session) {
+      console.warn('[Strava] Nessuna sessione attiva, impossibile completare il collegamento.');
+      return;
+    }
+
+    const res = await fetch(STRAVA_EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ code })
+    });
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      console.error('[Strava] Scambio token fallito:', result);
+      toast('❌ Errore nella connessione a Strava');
+      return;
+    }
+
+    toast(`✅ Strava connesso — ${result.athlete_name || ''}`);
+    updateStravaStatusUI(true);
+
+  } catch (e) {
+    console.error('[Strava] Errore callback:', e);
+    toast('❌ Errore nella connessione a Strava');
+  }
+}
+
+async function checkStravaConnection() {
+  try {
+    const { data: { session } } = await window.__sb.auth.getSession();
+    if (!session) return;
+
+    const { data, error } = await window.__sb
+      .from('strava_connections')
+      .select('strava_athlete_id, connected_at')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    updateStravaStatusUI(!!data && !error);
+  } catch (e) {
+    console.warn('[Strava] Check connessione fallito:', e);
+  }
+}
+
+function updateStravaStatusUI(connected) {
+  const sub = document.getElementById('stravaStatusSub');
+  const btn = document.getElementById('stravaConnectBtn');
+  if (!sub || !btn) return;
+  if (connected) {
+    sub.textContent = state.lang === 'IT' ? 'Connesso' : 'Connected';
+    sub.style.color = 'var(--success)';
+    btn.textContent = state.lang === 'IT' ? 'Riconnetti' : 'Reconnect';
+  } else {
+    sub.textContent = state.lang === 'IT' ? 'Non connesso' : 'Not connected';
+    sub.style.color = '';
+    btn.textContent = state.lang === 'IT' ? 'Connetti' : 'Connect';
+  }
+}
+
 (async function() {
   try {
     window.__sb = window.supabase.createClient(SB_URL, SB_KEY, {
@@ -3362,11 +3499,15 @@ async function loginWithGoogle() {
         if (event === 'SIGNED_IN' && newSession) {
           await loadProfile(window.__sb, newSession.user.id);
           hideLoginOverlay();
+          await handleStravaCallback();
+          await checkStravaConnection();
         }
       });
       return;
     }
     await loadProfile(window.__sb, session.user.id);
+    await handleStravaCallback();
+    await checkStravaConnection();
   } catch(e) {
     console.warn('[ACore Athlete] Auth guard skipped (offline?):', e);
   }
