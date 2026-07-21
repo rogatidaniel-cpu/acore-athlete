@@ -998,6 +998,23 @@ nav {
           </div>
           <button class="btn btn-sync" id="stravaConnectBtn" onclick="connectStrava()">Connetti</button>
         </div>
+        <button class="btn btn-sm btn-secondary" id="stravaSyncBtn" onclick="syncStravaActivities()" style="display:none;">
+          <span id="stravaSyncBtnLabel" data-i18n="stravaSyncNow">Sincronizza attività</span>
+        </button>
+        <div id="stravaSyncStatus" style="font-size:0.7rem; color:var(--ink-secondary); margin-top:4px; display:none;"></div>
+      </div>
+    </div>
+
+    <!-- SESSIONI -->
+    <div class="card" id="sessionsListCard">
+      <div class="card-header">
+        <span class="card-title" data-i18n="sessionsListTitle">Sessioni registrate</span>
+      </div>
+      <div class="card-body">
+        <div id="sessionsListEmpty" style="display:none; text-align:center; color:var(--ink-secondary); font-size:0.82rem; padding:16px 0;" data-i18n="sessionsEmpty">
+          Nessuna sessione registrata.
+        </div>
+        <div id="sessionsListContainer"></div>
       </div>
     </div>
 
@@ -1759,6 +1776,8 @@ const i18n = {
     blockMain:'🟠 Lavoro centrale', blockCool:'⚪ Defaticamento',
     toastPlanSaved:'✅ Piano salvato', toastPlanDeleted:'🗑 Piano eliminato',
     stravaSyncTitle:'Sincronizzazione', toastStravaDenied:'⚠️ Connessione Strava annullata',
+    stravaSyncNow:'Sincronizza attività',
+    sessionsListTitle:'Sessioni registrate', sessionsEmpty:'Nessuna sessione registrata.',
   },
   EN: {
     navProfile:'Profile', navPaces:'Paces', navWorkouts:'Training', navTechnique:'Technique', navRaces:'Races', navAnalytics:'Analytics',
@@ -1807,6 +1826,8 @@ const i18n = {
     blockMain:'🟠 Main set', blockCool:'⚪ Cool-down',
     toastPlanSaved:'✅ Plan saved', toastPlanDeleted:'🗑 Plan deleted',
     stravaSyncTitle:'Sync', toastStravaDenied:'⚠️ Strava connection cancelled',
+    stravaSyncNow:'Sync activities',
+    sessionsListTitle:'Logged sessions', sessionsEmpty:'No sessions logged yet.',
   }
 };
 
@@ -3237,6 +3258,7 @@ async function wipeAll() {
 function renderAll() {
   renderProfile();
   renderRaces();
+  renderWorkoutsList();
   updatePaywallBanners();
   initTrainingUI();
   applyLang();
@@ -3396,6 +3418,7 @@ async function loginWithGoogle() {
 const STRAVA_CLIENT_ID = '266671';
 const STRAVA_REDIRECT_URI = 'https://athlete.getaquacore.com';
 const STRAVA_EDGE_FUNCTION_URL = 'https://vqfzywjiyzpwhzqwixex.supabase.co/functions/v1/strava-oauth-exchange';
+const STRAVA_IMPORT_EDGE_FUNCTION_URL = 'https://vqfzywjiyzpwhzqwixex.supabase.co/functions/v1/strava-import-activities';
 
 function connectStrava() {
   const authUrl = `https://www.strava.com/oauth/authorize` +
@@ -3475,6 +3498,7 @@ async function checkStravaConnection() {
 function updateStravaStatusUI(connected) {
   const sub = document.getElementById('stravaStatusSub');
   const btn = document.getElementById('stravaConnectBtn');
+  const syncBtn = document.getElementById('stravaSyncBtn');
   if (!sub || !btn) return;
   if (connected) {
     sub.textContent = state.lang === 'IT' ? 'Connesso' : 'Connected';
@@ -3485,6 +3509,161 @@ function updateStravaStatusUI(connected) {
     sub.style.color = '';
     btn.textContent = state.lang === 'IT' ? 'Connetti' : 'Connect';
   }
+  if (syncBtn) syncBtn.style.display = connected ? 'inline-flex' : 'none';
+}
+
+async function syncStravaActivities() {
+  const btn = document.getElementById('stravaSyncBtn');
+  const label = document.getElementById('stravaSyncBtnLabel');
+  const statusEl = document.getElementById('stravaSyncStatus');
+  btn.disabled = true;
+  if (label) label.textContent = state.lang === 'IT' ? 'Sincronizzo…' : 'Syncing…';
+
+  try {
+    const { data: { session } } = await window.__sb.auth.getSession();
+    if (!session) return;
+
+    // Sync incrementale: usa l'ultima sincronizzazione se disponibile in locale
+    const lastSync = state.stravaLastSyncedAt
+      ? Math.floor(new Date(state.stravaLastSyncedAt).getTime() / 1000)
+      : undefined;
+
+    const res = await fetch(STRAVA_IMPORT_EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(lastSync ? { after: lastSync } : {})
+    });
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      if (result.error === 'not_connected') {
+        toast(state.lang === 'IT' ? '⚠️ Strava non connesso' : '⚠️ Strava not connected');
+      } else {
+        toast(state.lang === 'IT' ? '❌ Sincronizzazione fallita' : '❌ Sync failed');
+      }
+      return;
+    }
+
+    // Dedup: scarta attività già importate in precedenza (stesso stravaId)
+    const existingStravaIds = new Set(
+      state.workouts.filter(w => w.source === 'strava').map(w => w.stravaId)
+    );
+    const newActivities = result.activities.filter(a => !existingStravaIds.has(a.stravaId));
+
+    // Paywall free: le sessioni Strava contano nello stesso limite di state.workouts (FREE_SESSION_LIMIT, vedi checkPaywall())
+    const isFree = !state.isPro;
+    const remaining = isFree ? Math.max(0, FREE_SESSION_LIMIT - state.workouts.length) : newActivities.length;
+
+    if (isFree && remaining <= 0) {
+      checkPaywall();
+      toast(state.lang === 'IT'
+        ? '🔒 Limite di 3 sessioni raggiunto — passa a Pro per sincronizzare'
+        : '🔒 3-session limit reached — upgrade to Pro to sync');
+      return;
+    }
+
+    const toImport = newActivities.slice(0, remaining);
+
+    // Mapping da formato Strava a formato workout locale
+    toImport.forEach(a => {
+      state.workouts.unshift({
+        id: 'strava_' + a.stravaId,
+        date: a.date,
+        distance: a.distanceMeters,
+        duration: a.durationSec,
+        style: null, // Strava non distingue lo stile nuotato
+        source: 'strava',
+        stravaId: a.stravaId,
+        notes: a.name,
+      });
+    });
+
+    state.stravaLastSyncedAt = new Date().toISOString();
+    await saveState();
+    renderAll();
+    checkPaywall();
+
+    if (isFree && toImport.length < newActivities.length) {
+      toast(state.lang === 'IT'
+        ? `⚠️ Importate ${toImport.length} di ${newActivities.length} sessioni — passa a Pro per le altre`
+        : `⚠️ Imported ${toImport.length} of ${newActivities.length} sessions — upgrade to Pro for the rest`);
+    } else {
+      toast(
+        toImport.length > 0
+          ? `✅ ${toImport.length} ${state.lang === 'IT' ? 'sessioni importate' : 'sessions imported'}`
+          : (state.lang === 'IT' ? '✅ Già tutto aggiornato' : '✅ Already up to date')
+      );
+    }
+
+    if (statusEl) {
+      const ts = new Date(state.stravaLastSyncedAt).toLocaleString(state.lang === 'IT' ? 'it-IT' : 'en-US', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+      statusEl.textContent = (state.lang === 'IT' ? 'Ultimo sync: ' : 'Last sync: ') + ts;
+      statusEl.style.display = 'block';
+    }
+
+  } catch (e) {
+    console.error('[Strava Sync] Errore:', e);
+    toast(state.lang === 'IT' ? '❌ Errore di sincronizzazione' : '❌ Sync error');
+  } finally {
+    btn.disabled = false;
+    if (label) label.textContent = state.lang === 'IT' ? 'Sincronizza attività' : 'Sync activities';
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderWorkoutsList() {
+  const container = document.getElementById('sessionsListContainer');
+  const emptyEl = document.getElementById('sessionsListEmpty');
+  if (!container || !emptyEl) return;
+
+  if (!state.workouts || state.workouts.length === 0) {
+    emptyEl.style.display = 'block';
+    container.innerHTML = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  const sorted = [...state.workouts].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  container.innerHTML = sorted.map(w => {
+    const km = (w.distance / 1000).toFixed(2);
+    const mins = Math.floor(w.duration / 60);
+    const secs = w.duration % 60;
+    const durationStr = `${mins}:${String(secs).padStart(2, '0')}`;
+    const badgeColor = w.source === 'strava' ? '#fc4c02' : 'var(--app-color)';
+    const badgeLabel = w.source === 'strava'
+      ? 'Strava'
+      : (state.lang === 'IT' ? 'Manuale' : 'Manual');
+
+    return `
+      <div class="history-item">
+        <div class="history-meta">
+          <strong>${km} km · <span style="color:${badgeColor};">${badgeLabel}</span></strong>
+          <small>${w.date} · ${durationStr}${w.notes ? ' · ' + escapeHtml(w.notes) : ''}</small>
+        </div>
+        <button class="icon-btn" onclick="deleteWorkout('${w.id}')" title="${state.lang === 'IT' ? 'Elimina' : 'Delete'}">🗑</button>
+      </div>
+    `;
+  }).join('');
+}
+
+async function deleteWorkout(id) {
+  const msg = state.lang === 'IT' ? 'Eliminare questa sessione?' : 'Delete this session?';
+  if (!confirm(msg)) return;
+
+  state.workouts = state.workouts.filter(w => w.id !== id);
+  await saveState();
+  renderWorkoutsList();
+  checkPaywall(); // il conteggio è cambiato, il banner deve aggiornarsi
 }
 
 (async function() {
