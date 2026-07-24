@@ -1785,6 +1785,7 @@ const i18n = {
     toastPlanSaved:'✅ Piano salvato', toastPlanDeleted:'🗑 Piano eliminato',
     stravaSyncTitle:'Sincronizzazione', toastStravaDenied:'⚠️ Connessione Strava annullata',
     stravaSyncNow:'Sincronizza attività',
+    cloudSyncOn: 'Sincronizzato', cloudSyncOff: 'Solo locale',
     sessionsListTitle:'Sessioni registrate', sessionsEmpty:'Nessuna sessione registrata.',
   },
   EN: {
@@ -1835,6 +1836,7 @@ const i18n = {
     toastPlanSaved:'✅ Plan saved', toastPlanDeleted:'🗑 Plan deleted',
     stravaSyncTitle:'Sync', toastStravaDenied:'⚠️ Strava connection cancelled',
     stravaSyncNow:'Sync activities',
+    cloudSyncOn: 'Synced', cloudSyncOff: 'Local only',
     sessionsListTitle:'Logged sessions', sessionsEmpty:'No sessions logged yet.',
   }
 };
@@ -1877,6 +1879,7 @@ let state = {
   pbs: [],
   races: [],
   workouts: [],
+  workoutsSyncedAt: null,
   savedPlans: [],
   phase: 'base',
   completed: {},
@@ -1911,6 +1914,122 @@ async function initDB() {
 
 async function saveState() {
   await db.store.put({ key: 'state', value: JSON.parse(JSON.stringify(state)) });
+}
+
+// ══════════════════════════════════════════════════════
+// CLOUD SYNC WORKOUTS (Supabase) — Dexie resta cache offline
+// ══════════════════════════════════════════════════════
+
+function workoutToRow(w, userId) {
+  return {
+    user_id: userId,
+    client_id: String(w.id),
+    app: 'athlete',
+    session_date: w.date,
+    distance_m: Math.round(w.distance || 0),
+    duration_sec: Math.round(w.duration || 0),
+    style: w.style || null,
+    sport_type: w.sportType || null,
+    pool_length: w.poolLength ?? null,
+    avg_speed_ms: w.avgSpeedMs ?? null,
+    avg_hr: w.avgHr ?? null,
+    max_hr: w.maxHr ?? null,
+    stress_score: w.stressScore ?? null,
+    source: w.source || 'manual',
+    strava_id: w.stravaId ?? null,
+    notes: w.notes || null,
+    deleted: w.deleted === true,
+    updated_at: w.updatedAt || new Date().toISOString()
+  };
+}
+
+function rowToWorkout(r) {
+  return {
+    id: r.client_id,
+    date: r.session_date,
+    distance: r.distance_m,
+    duration: r.duration_sec,
+    style: r.style,
+    sportType: r.sport_type,
+    poolLength: r.pool_length,
+    avgSpeedMs: r.avg_speed_ms,
+    avgHr: r.avg_hr,
+    maxHr: r.max_hr,
+    stressScore: r.stress_score,
+    source: r.source,
+    stravaId: r.strava_id,
+    notes: r.notes,
+    deleted: r.deleted === true,
+    updatedAt: r.updated_at
+  };
+}
+
+// Push di uno o più workout. Silenzioso se offline: Dexie resta la copia buona.
+async function pushWorkouts(list) {
+  if (!window.__sb || !list || list.length === 0) return false;
+  try {
+    const { data: { session } } = await window.__sb.auth.getSession();
+    if (!session) return false;
+    const rows = list.map(w => workoutToRow(w, session.user.id));
+    const { error } = await window.__sb
+      .from('workouts')
+      .upsert(rows, { onConflict: 'user_id,client_id' });
+    if (error) { console.warn('[Cloud] push fallito:', error.message); return false; }
+    return true;
+  } catch (e) {
+    console.warn('[Cloud] push errore:', e);
+    return false;
+  }
+}
+
+// Merge cloud → locale (last-write-wins su updatedAt) + push di ciò che manca in cloud.
+async function syncWorkoutsCloud() {
+  if (!window.__sb) return;
+  try {
+    const { data: { session } } = await window.__sb.auth.getSession();
+    if (!session) return;
+
+    const { data: rows, error } = await window.__sb
+      .from('workouts')
+      .select('*')
+      .eq('app', 'athlete');
+
+    if (error) { console.warn('[Cloud] pull fallito:', error.message); return; }
+
+    const byId = new Map();
+    (state.workouts || []).forEach(w => byId.set(String(w.id), w));
+
+    const toPush = [];
+
+    (rows || []).forEach(r => {
+      const remote = rowToWorkout(r);
+      const local = byId.get(remote.id);
+      if (!local) {
+        byId.set(remote.id, remote);
+      } else {
+        const lt = new Date(local.updatedAt || 0).getTime();
+        const rt = new Date(remote.updatedAt || 0).getTime();
+        if (rt >= lt) byId.set(remote.id, remote);
+        else toPush.push(local);
+      }
+    });
+
+    // Workout locali mai finiti in cloud (es. creati offline o pre-migrazione)
+    const remoteIds = new Set((rows || []).map(r => r.client_id));
+    byId.forEach((w, id) => { if (!remoteIds.has(id)) toPush.push(w); });
+
+    // I soft-deleted non tornano in lista
+    state.workouts = Array.from(byId.values()).filter(w => w.deleted !== true);
+    state.workoutsSyncedAt = new Date().toISOString();
+
+    if (toPush.length) await pushWorkouts(toPush);
+
+    await saveState();
+    renderWorkoutsList();
+    checkPaywall();
+  } catch (e) {
+    console.warn('[Cloud] sync workout errore:', e);
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -3629,8 +3748,9 @@ async function syncStravaActivities() {
     const { data: { session } } = await window.__sb.auth.getSession();
     if (!session) return;
 
-    // Sync incrementale: usa l'ultima sincronizzazione se disponibile in locale
-    const lastSync = state.stravaLastSyncedAt
+    // Il server usa last_synced_at dal DB se non passiamo 'after'.
+    // Passiamo il locale solo se più recente (utile offline-first).
+    const localSync = state.stravaLastSyncedAt
       ? Math.floor(new Date(state.stravaLastSyncedAt).getTime() / 1000)
       : undefined;
 
@@ -3640,7 +3760,7 @@ async function syncStravaActivities() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify(lastSync ? { after: lastSync } : {})
+      body: JSON.stringify(localSync ? { after: localSync } : {})
     });
 
     const result = await res.json();
@@ -3681,15 +3801,22 @@ async function syncStravaActivities() {
         date: a.date,
         distance: a.distanceMeters,
         duration: a.durationSec,
-        style: null, // Strava non distingue lo stile nuotato
+        style: null,
+        sportType: a.sportType || null,
+        poolLength: a.poolLength ?? null,
+        avgSpeedMs: a.avgSpeedMs ?? null,
+        avgHr: a.avgHr ?? null,
+        maxHr: a.maxHr ?? null,
         source: 'strava',
         stravaId: a.stravaId,
         notes: a.name,
+        updatedAt: new Date().toISOString()
       });
     });
 
-    state.stravaLastSyncedAt = new Date().toISOString();
+    state.stravaLastSyncedAt = result.lastSyncedAt || new Date().toISOString();
     await saveState();
+    await pushWorkouts(toImport.map(a => state.workouts.find(w => w.stravaId === a.stravaId)).filter(Boolean));
     renderAll();
     checkPaywall();
 
@@ -3707,7 +3834,13 @@ async function syncStravaActivities() {
 
     if (statusEl) {
       const ts = new Date(state.stravaLastSyncedAt).toLocaleString(state.lang === 'IT' ? 'it-IT' : 'en-US', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-      statusEl.textContent = (state.lang === 'IT' ? 'Ultimo sync: ' : 'Last sync: ') + ts;
+      let txt = (state.lang === 'IT' ? 'Ultimo sync: ' : 'Last sync: ') + ts;
+      if (result.truncated) {
+        txt += state.lang === 'IT'
+          ? ' · storico lungo, sincronizza di nuovo'
+          : ' · long history, sync again';
+      }
+      statusEl.textContent = txt;
       statusEl.style.display = 'block';
     }
 
@@ -3766,7 +3899,11 @@ async function deleteWorkout(id) {
   const msg = state.lang === 'IT' ? 'Eliminare questa sessione?' : 'Delete this session?';
   if (!confirm(msg)) return;
 
+  const removed = state.workouts.find(w => w.id === id);
   state.workouts = state.workouts.filter(w => w.id !== id);
+  if (removed) {
+    await pushWorkouts([{ ...removed, deleted: true, updatedAt: new Date().toISOString() }]);
+  }
   await saveState();
   renderWorkoutsList();
   checkPaywall(); // il conteggio è cambiato, il banner deve aggiornarsi
@@ -3786,6 +3923,7 @@ async function deleteWorkout(id) {
           hideLoginOverlay();
           await handleStravaCallback();
           await checkStravaConnection();
+          await syncWorkoutsCloud();
         }
       });
       return;
@@ -3793,6 +3931,7 @@ async function deleteWorkout(id) {
     await loadProfile(window.__sb, session.user.id);
     await handleStravaCallback();
     await checkStravaConnection();
+    await syncWorkoutsCloud();
   } catch(e) {
     console.warn('[ACore Athlete] Auth guard skipped (offline?):', e);
   }
