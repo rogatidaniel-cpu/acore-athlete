@@ -1006,8 +1006,11 @@ nav {
           </div>
           <button class="btn btn-sync" id="stravaConnectBtn" onclick="connectStrava()">Connetti</button>
         </div>
-        <button class="btn btn-sm btn-secondary" id="stravaSyncBtn" onclick="syncStravaActivities()" style="display:none;">
+        <button class="btn btn-sm btn-secondary" id="stravaSyncBtn" onclick="syncStravaActivities(false)" style="display:none;">
           <span id="stravaSyncBtnLabel" data-i18n="stravaSyncNow">Sincronizza attività</span>
+        </button>
+        <button class="btn btn-sm btn-secondary" id="stravaFullSyncBtn" onclick="syncStravaActivities(true)" style="display:none; margin-top:6px; opacity:0.75;">
+          <span data-i18n="stravaFullSync">↻ Risincronizza tutto</span>
         </button>
         <div id="stravaSyncStatus" style="font-size:0.7rem; color:var(--ink-secondary); margin-top:4px; display:none;"></div>
       </div>
@@ -1837,7 +1840,7 @@ const i18n = {
     blockMain:'🟠 Lavoro centrale', blockCool:'⚪ Defaticamento',
     toastPlanSaved:'✅ Piano salvato', toastPlanDeleted:'🗑 Piano eliminato',
     stravaSyncTitle:'Sincronizzazione', toastStravaDenied:'⚠️ Connessione Strava annullata',
-    stravaSyncNow:'Sincronizza attività',
+    stravaSyncNow:'Sincronizza attività', stravaFullSync:'↻ Risincronizza tutto',
     cloudSyncOn: 'Sincronizzato', cloudSyncOff: 'Solo locale',
     sessionsListTitle:'Sessioni registrate', sessionsEmpty:'Nessuna sessione registrata.',
     modalAddSessionTitle:'Aggiungi sessione', labelSessionDate:'Data', labelSessionDistance:'Distanza (m)',
@@ -1891,7 +1894,7 @@ const i18n = {
     blockMain:'🟠 Main set', blockCool:'⚪ Cool-down',
     toastPlanSaved:'✅ Plan saved', toastPlanDeleted:'🗑 Plan deleted',
     stravaSyncTitle:'Sync', toastStravaDenied:'⚠️ Strava connection cancelled',
-    stravaSyncNow:'Sync activities',
+    stravaSyncNow:'Sync activities', stravaFullSync:'↻ Full resync',
     cloudSyncOn: 'Synced', cloudSyncOff: 'Local only',
     sessionsListTitle:'Logged sessions', sessionsEmpty:'No sessions logged yet.',
     modalAddSessionTitle:'Add session', labelSessionDate:'Date', labelSessionDistance:'Distance (m)',
@@ -3831,9 +3834,11 @@ function updateStravaStatusUI(connected) {
     btn.textContent = state.lang === 'IT' ? 'Connetti' : 'Connect';
   }
   if (syncBtn) syncBtn.style.display = connected ? 'inline-flex' : 'none';
+  const fullBtn = document.getElementById('stravaFullSyncBtn');
+  if (fullBtn) fullBtn.style.display = connected ? 'inline-flex' : 'none';
 }
 
-async function syncStravaActivities() {
+async function syncStravaActivities(full = false) {
   const btn = document.getElementById('stravaSyncBtn');
   const label = document.getElementById('stravaSyncBtnLabel');
   const statusEl = document.getElementById('stravaSyncStatus');
@@ -3856,7 +3861,7 @@ async function syncStravaActivities() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify(localSync ? { after: localSync } : {})
+      body: JSON.stringify(full ? { full: true } : (localSync ? { after: localSync } : {}))
     });
 
     const result = await res.json();
