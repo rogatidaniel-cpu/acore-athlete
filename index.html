@@ -1897,16 +1897,11 @@ async function initDB() {
   const saved = await db.store.get('state');
   if (saved) state = { ...state, ...saved.value };
   // Attende il guard asincrono (max 3s) poi carica isPro
-  await new Promise(resolve => {
-    const start = Date.now();
-    const check = () => {
-      if (window.__acoreIsPro !== undefined || Date.now() - start > 3000) {
-        state.isPro = window.__acoreIsPro === true;
-        resolve();
-      } else setTimeout(check, 50);
-    };
-    check();
-  });
+  await Promise.race([
+    window.__acoreProfileReady,
+    new Promise(r => setTimeout(r, 3000))
+  ]);
+  state.isPro = window.__acoreIsPro === true;
   applyLang();
   renderAll();
   checkPaywall();
@@ -3396,6 +3391,9 @@ function renderAll() {
 // ══════════════════════════════════════════════════════
 // ── AQUACORE.AI Auth Guard + Pro Status ──
 window.__acoreIsPro = false; // default sicuro
+window.__acoreProfileReady = new Promise(resolve => {
+  window.__acoreProfileResolve = resolve;
+});
 (async function() {
   const SB_URL = 'https://vqfzywjiyzpwhzqwixex.supabase.co';
   const SB_KEY = 'sb_publishable_GnNyFpSAurKKp6sOl9xc6w_zXCHGa9m';
@@ -3406,6 +3404,7 @@ window.__acoreIsPro = false; // default sicuro
     if (!session) {
       const loginOverlay = document.getElementById('loginOverlay');
       if (loginOverlay) loginOverlay.style.display = 'flex';
+      window.__acoreProfileResolve?.();
       return;
     }
     const { data: profile } = await sb
@@ -3417,8 +3416,10 @@ window.__acoreIsPro = false; // default sicuro
       const notExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
       window.__acoreIsPro = profile.is_pro && notExpired;
     }
+    window.__acoreProfileResolve?.();
   } catch(e) {
     console.warn('[ACore Athlete] Auth guard skipped (offline?):', e);
+    window.__acoreProfileResolve?.();
   }
 })();
 
@@ -3527,6 +3528,11 @@ window.addEventListener('load', () => {
 
 // ── AQUACORE.AI Auth Guard integrato ──
 window.__acoreIsPro = false;
+if (!window.__acoreProfileReady) {
+  window.__acoreProfileReady = new Promise(resolve => {
+    window.__acoreProfileResolve = resolve;
+  });
+}
 window.__sb = null;
 
 const SB_URL = 'https://vqfzywjiyzpwhzqwixex.supabase.co';
@@ -3545,6 +3551,7 @@ async function loadProfile(sb, userId) {
     const notExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
     window.__acoreIsPro = profile.is_pro && notExpired;
   }
+  window.__acoreProfileResolve?.();
 }
 
 async function loginWithGoogle() {
@@ -3917,10 +3924,14 @@ async function deleteWorkout(id) {
     const { data: { session } } = await window.__sb.auth.getSession();
     if (!session) {
       showLoginOverlay();
+      window.__acoreProfileResolve?.();
       window.__sb.auth.onAuthStateChange(async (event, newSession) => {
         if (event === 'SIGNED_IN' && newSession) {
           await loadProfile(window.__sb, newSession.user.id);
           hideLoginOverlay();
+          state.isPro = window.__acoreIsPro === true;
+          checkPaywall();
+          renderAll();
           await handleStravaCallback();
           await checkStravaConnection();
           await syncWorkoutsCloud();
@@ -3934,6 +3945,7 @@ async function deleteWorkout(id) {
     await syncWorkoutsCloud();
   } catch(e) {
     console.warn('[ACore Athlete] Auth guard skipped (offline?):', e);
+    window.__acoreProfileResolve?.();
   }
 })();
 </script>
