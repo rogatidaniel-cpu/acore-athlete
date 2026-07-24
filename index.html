@@ -1017,6 +1017,7 @@ nav {
     <div class="card" id="sessionsListCard">
       <div class="card-header">
         <span class="card-title" data-i18n="sessionsListTitle">Sessioni registrate</span>
+        <button class="btn btn-sm btn-secondary" onclick="openModal('modalAddSession')" data-i18n="btnAddSession">+ Aggiungi</button>
       </div>
       <div class="card-body">
         <div id="sessionsListEmpty" style="display:none; text-align:center; color:var(--ink-secondary); font-size:0.82rem; padding:16px 0;" data-i18n="sessionsEmpty">
@@ -1690,6 +1691,58 @@ nav {
   </div>
 </div>
 
+<!-- MODAL: ADD SESSION -->
+<div class="modal-overlay" id="modalAddSession" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="modalAddSessionTitle">Aggiungi sessione</span>
+      <button class="modal-close" onclick="closeModal('modalAddSession')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label class="form-label" data-i18n="labelSessionDate">Data</label>
+        <input type="date" id="sessDate">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label class="form-label" data-i18n="labelSessionDistance">Distanza (m)</label>
+          <input type="number" id="sessDistance" min="0" step="25" placeholder="1500">
+        </div>
+        <div>
+          <label class="form-label" data-i18n="labelSessionDuration">Durata</label>
+          <div class="time-row">
+            <input type="number" id="sessMin" placeholder="min" min="0" class="time-box">
+            <span class="time-sep">:</span>
+            <input type="number" id="sessSec" placeholder="sec" min="0" max="59" class="time-box">
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="form-label" data-i18n="labelSessionStyle">Stile</label>
+        <select id="sessStyle">
+          <option value="SL">SL — Stile Libero</option>
+          <option value="DO">DO — Dorso</option>
+          <option value="RA">RA — Rana</option>
+          <option value="FA">FA — Farfalla</option>
+          <option value="MI">MI — Misti</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label" data-i18n="labelSessionPool">Vasca</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="sessPool25m" onclick="setSessPool('25m')">25m</button>
+          <button class="toggle-btn" id="sessPool50m" onclick="setSessPool('50m')">50m</button>
+        </div>
+      </div>
+      <div>
+        <label class="form-label" data-i18n="labelSessionNotes">Note (opzionale)</label>
+        <input type="text" id="sessNotes" maxlength="120">
+      </div>
+      <button class="btn btn-acid btn-full" onclick="saveWorkoutManual()" data-i18n="btnSaveSession">Salva Sessione</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: RACE RESULT -->
 <div class="modal-overlay" id="modalRaceResult" style="display:none;">
   <div class="modal-box">
@@ -1787,6 +1840,9 @@ const i18n = {
     stravaSyncNow:'Sincronizza attività',
     cloudSyncOn: 'Sincronizzato', cloudSyncOff: 'Solo locale',
     sessionsListTitle:'Sessioni registrate', sessionsEmpty:'Nessuna sessione registrata.',
+    modalAddSessionTitle:'Aggiungi sessione', labelSessionDate:'Data', labelSessionDistance:'Distanza (m)',
+    labelSessionDuration:'Durata', labelSessionStyle:'Stile', labelSessionPool:'Vasca', labelSessionNotes:'Note (opzionale)',
+    btnAddSession:'+ Aggiungi', btnSaveSession:'Salva Sessione', toastSessionSaved:'✅ Sessione salvata',
   },
   EN: {
     navProfile:'Profile', navPaces:'Paces', navWorkouts:'Training', navTechnique:'Technique', navRaces:'Races', navAnalytics:'Analytics',
@@ -1838,6 +1894,9 @@ const i18n = {
     stravaSyncNow:'Sync activities',
     cloudSyncOn: 'Synced', cloudSyncOff: 'Local only',
     sessionsListTitle:'Logged sessions', sessionsEmpty:'No sessions logged yet.',
+    modalAddSessionTitle:'Add session', labelSessionDate:'Date', labelSessionDistance:'Distance (m)',
+    labelSessionDuration:'Duration', labelSessionStyle:'Stroke', labelSessionPool:'Pool', labelSessionNotes:'Notes (optional)',
+    btnAddSession:'+ Add', btnSaveSession:'Save Session', toastSessionSaved:'✅ Session saved',
   }
 };
 
@@ -2081,6 +2140,10 @@ function openModal(id) {
   if (id === 'modalAddPB') {
     document.getElementById('pbDate').value = new Date().toISOString().slice(0, 10);
   }
+  if (id === 'modalAddSession') {
+    document.getElementById('sessDate').value = new Date().toISOString().slice(0, 10);
+    setSessPool('25m');
+  }
 }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -2167,6 +2230,13 @@ function renderProfile() {
 // PB
 // ══════════════════════════════════════════════════════
 let currentPBPool = '25m';
+let currentSessPool = '25m';
+function setSessPool(pool) {
+  currentSessPool = pool;
+  ['25m','50m'].forEach(p => {
+    document.getElementById('sessPool' + p)?.classList.toggle('active', p === pool);
+  });
+}
 
 function setPBPool(pool) {
   currentPBPool = pool;
@@ -2200,6 +2270,61 @@ function savePB() {
   document.getElementById('pbSec').value = '';
   document.getElementById('pbCs').value  = '';
   renderPaces();
+}
+
+function saveWorkoutManual() {
+  const isFree = !state.isPro;
+  if (isFree && state.workouts.length >= FREE_SESSION_LIMIT) {
+    closeModal('modalAddSession');
+    checkPaywall();
+    toast(state.lang === 'IT'
+      ? '🔒 Limite di 3 sessioni raggiunto — passa a Pro'
+      : '🔒 3-session limit reached — upgrade to Pro');
+    return;
+  }
+
+  const date = document.getElementById('sessDate').value || new Date().toISOString().slice(0, 10);
+  const distance = parseInt(document.getElementById('sessDistance').value) || 0;
+  const min = parseInt(document.getElementById('sessMin').value) || 0;
+  const sec = parseInt(document.getElementById('sessSec').value) || 0;
+  const duration = min * 60 + sec;
+  const style = document.getElementById('sessStyle').value;
+  const notes = document.getElementById('sessNotes').value.trim();
+
+  if (distance <= 0 || duration <= 0) {
+    toast(state.lang === 'IT' ? '⚠️ Inserisci distanza e durata' : '⚠️ Enter distance and duration');
+    return;
+  }
+
+  const workout = {
+    id: 'manual_' + Date.now(),
+    date,
+    distance,
+    duration,
+    style,
+    sportType: 'Swim',
+    poolLength: currentSessPool === '50m' ? 50 : 25,
+    avgSpeedMs: duration > 0 ? +(distance / duration).toFixed(3) : null,
+    avgHr: null,
+    maxHr: null,
+    source: 'manual',
+    stravaId: null,
+    notes: notes || null,
+    updatedAt: new Date().toISOString()
+  };
+
+  state.workouts.unshift(workout);
+  saveState();
+  pushWorkouts([workout]);
+  renderWorkoutsList();
+  checkPaywall();
+  closeModal('modalAddSession');
+  toast(t('toastSessionSaved'));
+
+  document.getElementById('sessDistance').value = '';
+  document.getElementById('sessMin').value = '';
+  document.getElementById('sessSec').value = '';
+  document.getElementById('sessNotes').value = '';
 }
 
 function renderPBGrid() {
@@ -3389,40 +3514,6 @@ function renderAll() {
 // ══════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════
-// ── AQUACORE.AI Auth Guard + Pro Status ──
-window.__acoreIsPro = false; // default sicuro
-window.__acoreProfileReady = new Promise(resolve => {
-  window.__acoreProfileResolve = resolve;
-});
-(async function() {
-  const SB_URL = 'https://vqfzywjiyzpwhzqwixex.supabase.co';
-  const SB_KEY = 'sb_publishable_GnNyFpSAurKKp6sOl9xc6w_zXCHGa9m';
-  const LOGIN_URL = 'https://getaquacore.com/login';
-  try {
-    const sb = window.supabase.createClient(SB_URL, SB_KEY);
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) {
-      const loginOverlay = document.getElementById('loginOverlay');
-      if (loginOverlay) loginOverlay.style.display = 'flex';
-      window.__acoreProfileResolve?.();
-      return;
-    }
-    const { data: profile } = await sb
-      .from('profiles')
-      .select('is_pro, pro_apps, pro_expires_at')
-      .eq('id', session.user.id)
-      .single();
-    if (profile) {
-      const notExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
-      window.__acoreIsPro = profile.is_pro && notExpired;
-    }
-    window.__acoreProfileResolve?.();
-  } catch(e) {
-    console.warn('[ACore Athlete] Auth guard skipped (offline?):', e);
-    window.__acoreProfileResolve?.();
-  }
-})();
-
 window.addEventListener('load', () => {
   initDB();
 });
@@ -3528,11 +3619,9 @@ window.addEventListener('load', () => {
 
 // ── AQUACORE.AI Auth Guard integrato ──
 window.__acoreIsPro = false;
-if (!window.__acoreProfileReady) {
-  window.__acoreProfileReady = new Promise(resolve => {
-    window.__acoreProfileResolve = resolve;
-  });
-}
+window.__acoreProfileReady = new Promise(resolve => {
+  window.__acoreProfileResolve = resolve;
+});
 window.__sb = null;
 
 const SB_URL = 'https://vqfzywjiyzpwhzqwixex.supabase.co';
