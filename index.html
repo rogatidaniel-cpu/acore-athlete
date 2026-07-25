@@ -653,6 +653,18 @@ nav {
 .stress-label { font-size: 0.7rem; color: var(--ink-secondary); margin-bottom: 4px; display: flex; justify-content: space-between; }
 .stress-bar { height: 8px; border-radius: 4px; background: var(--bg-void); overflow: hidden; }
 .stress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--z-a2), var(--z-b1), var(--z-b2), var(--z-c1), var(--z-c2)); transition: width 0.5s ease; }
+.effort-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.effort-btn { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 4px; border:var(--border); border-radius:10px; background:transparent; color:var(--ink-secondary); cursor:pointer; transition:all .2s; }
+.effort-btn.active { border-color:var(--app-color); background:rgba(124,58,237,.12); color:var(--ink-primary); }
+.effort-simple { font-weight:700; font-size:0.82rem; }
+.effort-tech { font-size:0.6rem; opacity:0.7; font-family:var(--font-data); }
+.pmc-numbers { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px; }
+.pmc-num { text-align:center; padding:12px 6px; border-radius:12px; background:rgba(255,255,255,.03); border:var(--border); }
+.pmc-num .val { font-family:var(--font-data); font-weight:800; font-size:1.6rem; line-height:1; }
+.pmc-num .lbl { font-size:0.66rem; color:var(--ink-secondary); text-transform:uppercase; letter-spacing:.05em; margin-top:4px; }
+.pmc-status { text-align:center; font-weight:700; font-size:0.95rem; padding:8px; border-radius:10px; margin-bottom:8px; }
+.pmc-chart-wrap { position:relative; }
+.pmc-locked { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:rgba(8,12,20,.82); backdrop-filter:blur(3px); border-radius:12px; text-align:center; padding:16px; }
 
 /* ── EMPTY STATE ── */
 .empty-state {
@@ -1557,6 +1569,14 @@ nav {
 
     <div id="analyticsContent" style="display:none;">
 
+      <!-- CONDIZIONE DI FORMA (CTL/ATL/TSB) -->
+      <div class="card">
+        <div class="card-header"><span class="card-title" data-i18n="pmcTitle">Condizione di forma</span></div>
+        <div class="card-body" id="pmcCardBody">
+          <!-- populated by renderPMC() -->
+        </div>
+      </div>
+
       <!-- PROGRESSIONE PB -->
       <div class="card">
         <div class="card-header"><span class="card-title" data-i18n="pbProgression">Progressione PB</span></div>
@@ -1738,6 +1758,16 @@ nav {
         </div>
       </div>
       <div>
+        <label class="form-label" data-i18n="labelSessionEffort">Intensità</label>
+        <div class="effort-grid" id="sessEffortGrid">
+          <button type="button" class="effort-btn" data-zone="A2" onclick="setSessEffort('A2')"><span class="effort-simple" data-i18n="effortEasy">Facile</span><span class="effort-tech">A2 · Aerobico</span></button>
+          <button type="button" class="effort-btn active" data-zone="B1" onclick="setSessEffort('B1')"><span class="effort-simple" data-i18n="effortMedium">Medio</span><span class="effort-tech">B1 · Soglia</span></button>
+          <button type="button" class="effort-btn" data-zone="B2" onclick="setSessEffort('B2')"><span class="effort-simple" data-i18n="effortHard">Duro</span><span class="effort-tech">B2 · VO₂max</span></button>
+          <button type="button" class="effort-btn" data-zone="C1" onclick="setSessEffort('C1')"><span class="effort-simple" data-i18n="effortRace">Gara</span><span class="effort-tech">C1 · Ritmo</span></button>
+          <button type="button" class="effort-btn" data-zone="C2" onclick="setSessEffort('C2')"><span class="effort-simple" data-i18n="effortSprint">Sprint</span><span class="effort-tech">C2 · Max</span></button>
+        </div>
+      </div>
+      <div>
         <label class="form-label" data-i18n="labelSessionNotes">Note (opzionale)</label>
         <input type="text" id="sessNotes" maxlength="120">
       </div>
@@ -1815,6 +1845,7 @@ const i18n = {
     newRace:'Pianifica una Gara', labelRaceName:'Nome gara', labelRaceDate:'Data', labelRaceEvent:'Gara', labelRaceGoal:'Obiettivo tempo (opzionale)', btnAddRace:'+ Aggiungi Gara',
     raceHistory:'Storico Risultati', analyticsEmpty:'Inserisci PB e risultati gara per vedere le tue analytics.',
     pbProgression:'Progressione PB', masterCategory:'Posizione categoria', weeklyLoad:'Carico settimanale',
+    pmcTitle:'Condizione di forma', labelSessionEffort:'Intensità', effortEasy:'Facile', effortMedium:'Medio', effortHard:'Duro', effortRace:'Gara', effortSprint:'Sprint',
     modalAddPBTitle:'Aggiungi / Aggiorna PB', labelTime:'Tempo', labelPBDate:'Data PB', btnSavePB:'Salva PB',
     legendTitle:'Legenda Zone & Hydro-Load', legendDesc:'ACore Athlete usa lo stesso motore di calcolo di ACore Coach — personalizzato sul tuo PB.',
     btnGotIt:'Capito!', modalResultTitle:'Inserisci Risultato Gara', labelResultTime:'Tempo ufficiale', btnSaveResult:'Salva Risultato',
@@ -1869,6 +1900,7 @@ const i18n = {
     newRace:'Plan a Race', labelRaceName:'Race name', labelRaceDate:'Date', labelRaceEvent:'Event', labelRaceGoal:'Goal time (optional)', btnAddRace:'+ Add Race',
     raceHistory:'Race Results History', analyticsEmpty:'Add PBs and race results to see your analytics.',
     pbProgression:'PB Progression', masterCategory:'Category standing', weeklyLoad:'Weekly load',
+    pmcTitle:'Form & condition', labelSessionEffort:'Intensity', effortEasy:'Easy', effortMedium:'Medium', effortHard:'Hard', effortRace:'Race', effortSprint:'Sprint',
     modalAddPBTitle:'Add / Update PB', labelTime:'Time', labelPBDate:'PB date', btnSavePB:'Save PB',
     legendTitle:'Zone Legend & Hydro-Load', legendDesc:'ACore Athlete uses the same calculation engine as ACore Coach — personalized to your PB.',
     btnGotIt:'Got it!', modalResultTitle:'Enter Race Result', labelResultTime:'Official time', btnSaveResult:'Save Result',
@@ -1992,6 +2024,7 @@ function workoutToRow(w, userId) {
     avg_hr: w.avgHr ?? null,
     max_hr: w.maxHr ?? null,
     stress_score: w.stressScore ?? null,
+    effort_zone: w.effortZone ?? null,
     source: w.source || 'manual',
     strava_id: w.stravaId ?? null,
     notes: w.notes || null,
@@ -2013,6 +2046,7 @@ function rowToWorkout(r) {
     avgHr: r.avg_hr,
     maxHr: r.max_hr,
     stressScore: r.stress_score,
+    effortZone: r.effort_zone ?? null,
     source: r.source,
     stravaId: r.strava_id,
     notes: r.notes,
@@ -2146,6 +2180,7 @@ function openModal(id) {
   if (id === 'modalAddSession') {
     document.getElementById('sessDate').value = new Date().toISOString().slice(0, 10);
     setSessPool('25m');
+    setSessEffort('B1');
   }
 }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -2241,6 +2276,14 @@ function setSessPool(pool) {
   });
 }
 
+let currentSessEffort = 'B1';
+function setSessEffort(zone) {
+  currentSessEffort = zone;
+  document.querySelectorAll('#sessEffortGrid .effort-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.zone === zone);
+  });
+}
+
 function setPBPool(pool) {
   currentPBPool = pool;
   ['25m','50m','25yd'].forEach(p => {
@@ -2310,6 +2353,7 @@ function saveWorkoutManual() {
     avgSpeedMs: duration > 0 ? +(distance / duration).toFixed(3) : null,
     avgHr: null,
     maxHr: null,
+    effortZone: currentSessEffort,
     source: 'manual',
     stravaId: null,
     notes: notes || null,
@@ -3394,6 +3438,139 @@ function updatePaywallBanners() {
 // ══════════════════════════════════════════════════════
 // ANALYTICS
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// PERFORMANCE MANAGEMENT (CTL/ATL/TSB)
+// ══════════════════════════════════════════════════════
+// Fattore di normalizzazione: porta lo stress "Training 2.0" su scala TSS-like.
+// Tararlo se i numeri risultano troppo alti/bassi (obiettivo: sessione media ~40-80).
+const PMC_NORMALIZE = 2.0;
+
+// TSS di una singola sessione. Ibrido: HR se disponibile, altrimenti zona sforzo.
+function sessionTSS(w) {
+  const durH = (w.duration || 0) / 3600;
+  // Caso A — con frequenza cardiaca (Strava da dispositivo)
+  if (w.avgHr && w.avgHr > 0) {
+    let lthr = 160;
+    if (state.profile && state.profile.year) {
+      const age = new Date().getFullYear() - Number(state.profile.year);
+      if (age > 0 && age < 100) lthr = Math.round((220 - age) * 0.9);
+    }
+    const intensity = w.avgHr / lthr;
+    return Math.round(durH * intensity * intensity * 100);
+  }
+  // Caso B — senza HR: distanza × stressFactor della zona
+  const zone = (typeof ZONES !== 'undefined' && ZONES[w.effortZone]) ? ZONES[w.effortZone]
+             : { stressFactor: 3 }; // default B1
+  const dist = w.distance || 0;
+  return Math.round((dist / 100) * zone.stressFactor * PMC_NORMALIZE);
+}
+
+// Costruisce la serie giornaliera CTL/ATL/TSB dalla prima sessione a oggi.
+function buildPMCSeries() {
+  const workouts = (state.workouts || []).filter(w => !w.deleted && w.date);
+  if (!workouts.length) return [];
+
+  // TSS aggregato per giorno
+  const tssByDay = {};
+  workouts.forEach(w => {
+    const d = String(w.date).slice(0, 10);
+    tssByDay[d] = (tssByDay[d] || 0) + sessionTSS(w);
+  });
+
+  const dates = Object.keys(tssByDay).sort();
+  const start = new Date(dates[0] + 'T00:00:00');
+  const end = new Date(); end.setHours(0,0,0,0);
+
+  const series = [];
+  let ctl = 0, atl = 0;
+  for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
+    const key = day.toISOString().slice(0, 10);
+    const tss = tssByDay[key] || 0;
+    ctl = ctl + (tss - ctl) / 42;
+    atl = atl + (tss - atl) / 7;
+    series.push({ date: key, tss, ctl: +ctl.toFixed(1), atl: +atl.toFixed(1), tsb: +(ctl - atl).toFixed(1) });
+  }
+  return series;
+}
+
+// Stato leggibile dal TSB
+function tsbStatus(tsb) {
+  const IT = state.lang === 'IT';
+  if (tsb > 15)  return { txt: IT ? 'Fresco / scarico' : 'Fresh / tapered', color: 'var(--z-a2)' };
+  if (tsb >= -10) return { txt: IT ? 'In forma, pronto' : 'Fit and ready', color: 'var(--z-b1)' };
+  if (tsb >= -30) return { txt: IT ? 'In carico' : 'Building load', color: 'var(--z-b2)' };
+  return { txt: IT ? 'Fatica alta — attenzione' : 'High fatigue — caution', color: 'var(--z-c1)' };
+}
+
+// Grafico a linee SVG (CTL, ATL, TSB) sugli ultimi N giorni
+function renderPMCChart(series, days) {
+  const data = series.slice(-days);
+  if (data.length < 2) return '<div style="color:var(--ink-muted);font-size:0.8rem;padding:20px;text-align:center;">' + (state.lang === 'IT' ? 'Servono più sessioni per il grafico.' : 'Need more sessions for the chart.') + '</div>';
+
+  const W = 320, H = 140, padL = 4, padR = 4, padT = 8, padB = 8;
+  const allVals = data.flatMap(d => [d.ctl, d.atl, d.tsb]);
+  const maxV = Math.max(...allVals, 10);
+  const minV = Math.min(...allVals, 0);
+  const range = (maxV - minV) || 1;
+  const x = i => padL + (i / (data.length - 1)) * (W - padL - padR);
+  const y = v => padT + (1 - (v - minV) / range) * (H - padT - padB);
+
+  const line = (key, color) => {
+    const pts = data.map((d, i) => `${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`).join(' ');
+    return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
+  };
+  const zeroY = y(0);
+
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">
+    <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="var(--ink-muted)" stroke-width="0.5" stroke-dasharray="3 3" opacity="0.4"/>
+    ${line('tsb', 'var(--copper)')}
+    ${line('ctl', 'var(--app-color)')}
+    ${line('atl', 'var(--z-b2)')}
+  </svg>
+  <div style="display:flex;gap:14px;justify-content:center;font-size:0.68rem;margin-top:6px;">
+    <span style="color:var(--app-color)">━ CTL</span>
+    <span style="color:var(--z-b2)">━ ATL</span>
+    <span style="color:var(--copper)">━ TSB</span>
+  </div>`;
+}
+
+// Render della card completa
+function renderPMC() {
+  const host = document.getElementById('pmcCardBody');
+  if (!host) return;
+  const series = buildPMCSeries();
+  if (!series.length) {
+    host.innerHTML = `<div style="color:var(--ink-muted);font-size:0.82rem;text-align:center;padding:16px;">${state.lang === 'IT' ? 'Registra o importa sessioni per vedere la tua condizione di forma.' : 'Log or import sessions to see your form.'}</div>`;
+    return;
+  }
+  const last = series[series.length - 1];
+  const st = tsbStatus(last.tsb);
+  const isFree = !state.isPro;
+
+  const numbers = `<div class="pmc-numbers">
+    <div class="pmc-num"><div class="val" style="color:var(--app-color)">${Math.round(last.ctl)}</div><div class="lbl">CTL · ${state.lang==='IT'?'Forma':'Fitness'}</div></div>
+    <div class="pmc-num"><div class="val" style="color:var(--z-b2)">${Math.round(last.atl)}</div><div class="lbl">ATL · ${state.lang==='IT'?'Fatica':'Fatigue'}</div></div>
+    <div class="pmc-num"><div class="val" style="color:var(--copper)">${last.tsb>0?'+':''}${Math.round(last.tsb)}</div><div class="lbl">TSB · ${state.lang==='IT'?'Freschezza':'Form'}</div></div>
+  </div>
+  <div class="pmc-status" style="color:${st.color};background:${st.color}1a;">${st.txt}</div>`;
+
+  let chart;
+  if (isFree) {
+    // Free: grafico corto (7 giorni) sfocato con overlay Pro
+    chart = `<div class="pmc-chart-wrap">
+      <div style="filter:blur(3px);opacity:.5;pointer-events:none;">${renderPMCChart(series, 7)}</div>
+      <div class="pmc-locked">
+        <div style="font-size:1.4rem;">🔒</div>
+        <div style="font-weight:700;">${state.lang==='IT'?'Storico completo con Pro':'Full history with Pro'}</div>
+        <div style="font-size:0.75rem;color:var(--ink-secondary);">${state.lang==='IT'?'Sblocca 90 giorni di andamento forma':'Unlock 90 days of form trend'}</div>
+      </div>
+    </div>`;
+  } else {
+    chart = `<div class="pmc-chart-wrap">${renderPMCChart(series, 90)}</div>`;
+  }
+  host.innerHTML = numbers + chart;
+}
+
 function renderAnalytics() {
   const noPB = document.getElementById('analyticsNoPB');
   const content = document.getElementById('analyticsContent');
@@ -3438,16 +3615,31 @@ function renderAnalytics() {
     masterContent.innerHTML = `<div style="color:var(--ink-muted);font-size:0.82rem;">${state.lang === 'IT' ? 'Aggiungi il tuo PB nei 100m SL per vedere la comparazione.' : 'Add your 100m freestyle PB to see the comparison.'}</div>`;
   }
 
-  // Weekly load (ultime 4 settimane simulate)
+  // Condizione di forma (CTL/ATL/TSB)
+  renderPMC();
+
+  // Weekly load — DATI REALI dai TSS delle ultime 4 settimane
   const bars = document.getElementById('weeklyLoadBars');
   const weeks = state.lang === 'IT'
     ? ['4 sett. fa','3 sett. fa','2 sett. fa','Questa sett.']
     : ['4 weeks ago','3 weeks ago','2 weeks ago','This week'];
-  const vals = [45, 62, 78, 55]; // simulati
+  const nowW = new Date(); nowW.setHours(0,0,0,0);
+  const vals = [3,2,1,0].map(wAgo => {
+    const end = new Date(nowW); end.setDate(end.getDate() - wAgo*7);
+    const start = new Date(end); start.setDate(start.getDate() - 6);
+    let sum = 0;
+    (state.workouts || []).forEach(w => {
+      if (w.deleted || !w.date) return;
+      const d = new Date(String(w.date).slice(0,10) + 'T00:00:00');
+      if (d >= start && d <= end) sum += sessionTSS(w);
+    });
+    return Math.round(sum);
+  });
+  const maxLoad = Math.max(...vals, 1);
   bars.innerHTML = weeks.map((w, i) => `
     <div class="progress-bar-wrap">
       <div class="progress-label"><span>${w}</span><span style="font-family:var(--font-data);color:var(--copper);">${vals[i]} pts</span></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${vals[i]}%"></div></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(vals[i]/maxLoad*100)}%"></div></div>
     </div>
   `).join('');
 }
