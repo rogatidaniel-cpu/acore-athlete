@@ -3574,7 +3574,10 @@ function renderPMC() {
 function renderAnalytics() {
   const noPB = document.getElementById('analyticsNoPB');
   const content = document.getElementById('analyticsContent');
-  if (!state.pbs.length || !state.profile) {
+  const hasWorkouts = (state.workouts || []).some(w => !w.deleted);
+  // Mostra le analytics se c'è ALMENO una fonte dati: PB oppure sessioni.
+  // I blocchi PB-dipendenti si auto-proteggono più sotto.
+  if ((!state.pbs.length || !state.profile) && !hasWorkouts) {
     noPB.style.display = 'block';
     content.style.display = 'none';
     return;
@@ -3584,7 +3587,7 @@ function renderAnalytics() {
 
   // Progressione PB
   const pbList = document.getElementById('pbProgressionList');
-  pbList.innerHTML = state.pbs.map(pb => {
+  pbList.innerHTML = (state.pbs || []).map(pb => {
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:var(--border);">
         <div>
@@ -3597,10 +3600,10 @@ function renderAnalytics() {
   }).join('');
 
   // Categoria master
-  const cat = getMasterCategory(state.profile.year);
-  const ref = MASTER_REFS[cat];
   const masterContent = document.getElementById('masterCategoryContent');
-  const slPB = state.pbs.find(p => p.style === 'SL');
+  const cat = (state.profile && state.profile.year) ? getMasterCategory(state.profile.year) : null;
+  const ref = cat ? MASTER_REFS[cat] : null;
+  const slPB = (state.pbs || []).find(p => p.style === 'SL');
   if (ref && slPB) {
     const pct = Math.min(100, Math.round((ref.SL / slPB.cs) * 100));
     masterContent.innerHTML = `
