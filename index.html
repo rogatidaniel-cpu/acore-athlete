@@ -198,7 +198,7 @@ nav {
 .nav-btn.active svg { filter: drop-shadow(0 0 4px var(--app-color)); }
 
 /* ── TABS ── */
-.tab { display: none; padding-top: 20px; }
+.tab { display: none; padding-top: 20px; padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
 .tab.active { display: block; animation: fadeUp 0.25s ease; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
