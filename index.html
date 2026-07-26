@@ -1647,7 +1647,7 @@ nav {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
         <div>
           <label class="form-label" data-i18n="labelStyle">Stile</label>
-          <select id="pbStyle">
+          <select id="pbStyle" onchange="rebuildPBDists()">
             <option value="SL">SL — Stile Libero</option>
             <option value="DO">DO — Dorso</option>
             <option value="RA">RA — Rana</option>
@@ -1657,14 +1657,7 @@ nav {
         </div>
         <div>
           <label class="form-label" data-i18n="labelDist">Distanza</label>
-          <select id="pbDist">
-            <option value="50">50m</option>
-            <option value="100" selected>100m</option>
-            <option value="200">200m</option>
-            <option value="400">400m</option>
-            <option value="800">800m</option>
-            <option value="1500">1500m</option>
-          </select>
+          <select id="pbDist"></select>
         </div>
       </div>
       <div>
@@ -1951,6 +1944,49 @@ const PENALTY = {
   '25yd': { SL:-1100,DO:-1200,FA:-1150,RA:-1400,MI:-1200 }
 };
 const DECAY = { 25:0.235, 50:0.475, 100:1.0, 150:1.56, 200:2.08, 400:4.35, 800:9.2, 1500:18.0 };
+
+const PB_DISTS = {
+  '25m': {
+    SL: [25, 50, 100, 200, 400, 800, 1500],
+    DO: [25, 50, 100, 200],
+    RA: [25, 50, 100, 200],
+    FA: [25, 50, 100, 200],
+    MI: [100, 200, 400]
+  },
+  '50m': {
+    SL: [50, 100, 200, 400, 800, 1500],
+    DO: [50, 100, 200],
+    RA: [50, 100, 200],
+    FA: [50, 100, 200],
+    MI: [200, 400]
+  }
+};
+
+function pbDistsFor(style, pool) {
+  const table = PB_DISTS[pool === '50m' ? '50m' : '25m'];
+  return table[style] || table.SL;
+}
+
+// Selezione PB: distanza più vicina in scala log,
+// a parità di distanza il tempo migliore.
+function pickPB(list, style, targetDist) {
+  const cand = (list || []).filter(p => p && p.style === style && p.cs > 0);
+  if (!cand.length) return null;
+  const target = targetDist || 100;
+  let best = null;
+  for (const p of cand) {
+    const d = Math.abs(Math.log((p.dist || 100) / target));
+    const better = !best
+      || d < best.d - 1e-9
+      || (Math.abs(d - best.d) < 1e-9 && p.cs < best.p.cs);
+    if (better) best = { d, p };
+  }
+  return best.p;
+}
+
+// Distanza di riferimento per il generatore di piani, per obiettivo.
+const GOAL_TARGET_DIST = { sprint: 100, middle: 200, endurance: 800 };
+
 const RECOVERY = { A2:900, B1:1500, B2:2800, C1:4500, C2:12000 };
 
 // Tempi di riferimento master (centesimi) — 100SL per categoria, stile libero
@@ -1997,6 +2033,7 @@ async function initDB() {
   ]);
   state.isPro = window.__acoreIsPro === true;
   applyLang();
+  rebuildPBDists();
   renderAll();
   checkPaywall();
 }
@@ -2284,11 +2321,22 @@ function setSessEffort(zone) {
   });
 }
 
+function rebuildPBDists() {
+  const styleEl = document.getElementById('pbStyle');
+  const distEl  = document.getElementById('pbDist');
+  if (!styleEl || !distEl) return;
+  const valid = pbDistsFor(styleEl.value, currentPBPool);
+  const cur = parseInt(distEl.value);
+  distEl.innerHTML = valid.map(d => `<option value="${d}">${d}m</option>`).join('');
+  distEl.value = valid.includes(cur) ? cur : valid[0];
+}
+
 function setPBPool(pool) {
   currentPBPool = pool;
   ['25m','50m','25yd'].forEach(p => {
     document.getElementById('pbPool' + p.replace('.',''))?.classList.toggle('active', p === pool);
   });
+  rebuildPBDists();
 }
 
 function savePB() {
@@ -2408,8 +2456,12 @@ function deletePB(idx) {
 
 function prefillPBEdit(style, dist, pool) {
   document.getElementById('pbStyle').value = style;
-  document.getElementById('pbDist').value = dist;
-  setPBPool(pool || '25m');
+  setPBPool(pool || '25m');            // chiama rebuildPBDists()
+  const distEl = document.getElementById('pbDist');
+  const wanted = parseInt(dist);
+  if ([...distEl.options].some(o => parseInt(o.value) === wanted)) {
+    distEl.value = wanted;
+  }
   openModal('modalAddPB');
 }
 
@@ -2484,7 +2536,7 @@ function renderPaces() {
   const dist = parseInt(distEl.value);
   const delta = parseFloat(document.getElementById('paceDelta').value) || 1.5;
 
-  const pb = state.pbs.find(p => p.style === style);
+  const pb = pickPB(state.pbs, style, dist);
   const noPB = document.getElementById('pacesNoPB');
   const content = document.getElementById('pacesContent');
 
@@ -2537,7 +2589,7 @@ function renderStress() {
   const delta = parseFloat(document.getElementById('paceDelta')?.value || 1.5);
   const reps = parseInt(document.getElementById('stressReps')?.value || 6);
   const zoneKey = document.getElementById('stressZone')?.value || 'B2';
-  const pb = state.pbs.find(p => p.style === style);
+  const pb = pickPB(state.pbs, style, dist);
   if (!pb) return;
   const pool = pb.pool || '25m';
 
@@ -2578,7 +2630,7 @@ function calcCustomWorkout() {
   const zoneLabels = t('zoneLabels');
 
   blocks.forEach(block => {
-    const pb = state.pbs.find(p => p.style === block.style) || state.pbs[0];
+    const pb = pickPB(state.pbs, block.style, block.dist) || state.pbs[0];
     const zones = calcZones(pb.cs, pool, block.style, block.dist, delta, pb.dist);
     resultDiv.innerHTML += `
       <div class="card" style="margin:0;">
@@ -2846,7 +2898,7 @@ function generatePlan() {
   trainState.style = document.getElementById('trainStyle').value;
   trainState.goal  = document.getElementById('trainGoal').value;
 
-  const pb = state.pbs.find(p => p.style === trainState.style) || state.pbs[0];
+  const pb = pickPB(state.pbs, trainState.style, GOAL_TARGET_DIST[trainState.goal] || 100) || state.pbs[0];
   if (!pb) {
     toast(state.lang === 'IT'
       ? '⚠️ Aggiungi un PB nel profilo prima di generare il piano'
@@ -3603,9 +3655,10 @@ function renderAnalytics() {
   const masterContent = document.getElementById('masterCategoryContent');
   const cat = (state.profile && state.profile.year) ? getMasterCategory(state.profile.year) : null;
   const ref = cat ? MASTER_REFS[cat] : null;
-  const slPB = (state.pbs || []).find(p => p.style === 'SL');
+  const slPB = pickPB(state.pbs, 'SL', 100);
   if (ref && slPB) {
-    const pct = Math.min(100, Math.round((ref.SL / slPB.cs) * 100));
+    const slNorm = slPB.cs / (DECAY[slPB.dist] || 1.0);
+    const pct = Math.min(100, Math.round((ref.SL / slNorm) * 100));
     masterContent.innerHTML = `
       <div style="font-size:0.82rem;color:var(--ink-secondary);margin-bottom:10px;">${t('masterCatNote')}</div>
       <div class="progress-bar-wrap">
