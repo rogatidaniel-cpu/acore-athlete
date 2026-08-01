@@ -860,6 +860,7 @@ nav {
 }
 .block-zone-key { font-family: var(--font-data); font-weight: 700; }
 .block-zone-pace { font-family: var(--font-data); color: var(--ink-primary); }
+.block-zone-unit { font-size: 0.72em; color: var(--ink-secondary); font-weight: 500; margin-left: 1px; }
 .block-zone-int { font-family: var(--font-data); color: var(--ink-secondary); }
 .session-stress {
   padding: 8px 14px;
@@ -2527,15 +2528,8 @@ function calcZones(pbCs, pool, style, dist, delta, pbDist) {
 }
 
 function renderPaces() {
-  // Se lo stile selezionato non ha un PB, passa al primo stile disponibile
   const styleEl = document.getElementById('paceStyle');
   const distEl = document.getElementById('paceDist');
-  const currentStyle = styleEl.value;
-  const hasPB = state.pbs.some(p => p.style === currentStyle);
-  if (!hasPB && state.pbs.length > 0) {
-    styleEl.value = state.pbs[0].style;
-    distEl.value = state.pbs[0].dist;
-  }
 
   // Distanze valide per stile
   const VALID_DISTS = {
@@ -2616,7 +2610,7 @@ function calcCustomWorkout() {
   const pool = state.profile?.pool || '25m';
   const delta = 1.5;
   const tokens = raw.split(/[\n,;+\t]+/);
-  const pattern = /^(\d+)\s*[x*×]\s*(\d+)\s*(SL|DO|RA|FA|MI)$/i;
+  const pattern = /^(?:(\d+)\s*[x*×]\s*)?(\d+)\s*(SL|DO|RA|FA|MI)$/i;
   const resultDiv = document.getElementById('customWorkoutResult');
   resultDiv.innerHTML = '';
   resultDiv.style.display = 'none';
@@ -2624,7 +2618,7 @@ function calcCustomWorkout() {
   const blocks = [];
   tokens.map(t => t.trim()).forEach(tok => {
     const m = tok.match(pattern);
-    if (m) blocks.push({ reps: parseInt(m[1]), dist: parseInt(m[2]), style: m[3].toUpperCase() });
+    if (m) blocks.push({ reps: parseInt(m[1]) || 1, dist: parseInt(m[2]), style: m[3].toUpperCase() });
   });
 
   if (!blocks.length || !state.pbs.length) return;
@@ -2901,8 +2895,8 @@ function generatePlan() {
   trainState.style = document.getElementById('trainStyle').value;
   trainState.goal  = document.getElementById('trainGoal').value;
 
-  const pb = pickPB(state.pbs, trainState.style, GOAL_TARGET_DIST[trainState.goal] || 100) || state.pbs[0];
-  if (!pb) {
+  const hasAnyPB = pickPB(state.pbs, trainState.style, GOAL_TARGET_DIST[trainState.goal] || 100);
+  if (!hasAnyPB) {
     toast(state.lang === 'IT'
       ? '⚠️ Aggiungi un PB nel profilo prima di generare il piano'
       : '⚠️ Add a PB in your profile before generating a plan');
@@ -2914,7 +2908,7 @@ function generatePlan() {
 
   for (let w = 0; w < (state.isPro ? totalWeeks : 1); w++) {
     const weekFactor = WEEK_PROGRESSION[trainState.phase][w] * TAPER_FACTOR[trainState.phase];
-    const sessions = buildWeek(pb, weekFactor, w);
+    const sessions = buildWeek(state.pbs, weekFactor, w);
     plan.push({ week: w + 1, sessions });
   }
 
@@ -2934,7 +2928,7 @@ function generatePlan() {
   updateTrainingPaywall();
 }
 
-function buildWeek(pb, factor, weekIndex) {
+function buildWeek(pbs, factor, weekIndex) {
   const sessions = [];
   const centralBlocks = CENTRAL_MATRIX[trainState.goal][trainState.phase];
 
@@ -2945,14 +2939,14 @@ function buildWeek(pb, factor, weekIndex) {
       else if (i === 1) sessionType = 'technical';
       else if (i === trainState.days.length - 1 && trainState.goal !== 'endurance') sessionType = 'speed';
     }
-    const session = buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType);
+    const session = buildSession(pbs, centralBlocks, factor, dayCode, weekIndex, sessionType);
     sessions.push(session);
   });
 
   return sessions;
 }
 
-function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType) {
+function buildSession(pbs, centralBlocks, factor, dayCode, weekIndex, sessionType) {
   const lang = state.lang;
   const pool = trainState.pool;
   const style = trainState.style;
@@ -2967,9 +2961,12 @@ function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType
   blocks.push({
     type: 'warmup',
     icon: '🔵',
+    titleKey: 'blkWarmup',
+    detailKey: 'blkWarmupDetail',
+    style, warmDist: 500,
     title: lang === 'IT' ? 'Riscaldamento' : 'Warm-up',
     detail: `500m ${style} A2`,
-    zones: getPaceZones(pb, pool, style, 100, 'A2'),
+    zones: getPaceZones(pbs, pool, style, 100, 'A2'),
     volume: 500,
     stressScore: 5,
   });
@@ -2978,6 +2975,9 @@ function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType
   blocks.push({
     type: 'tech',
     icon: '🟣',
+    titleKey: 'blkTech',
+    techReps, techPoolLen: techPool,
+    techPair: [techLib[techIdx1], techLib[techIdx2]],
     title: lang === 'IT' ? `Tecnica — ${techReps}×${techPool}m` : `Technique — ${techReps}×${techPool}m`,
     detail: `${techLib[techIdx1][lang === 'IT' ? 'it' : 'en']} · ${techLib[techIdx2][lang === 'IT' ? 'it' : 'en']}`,
     zones: null,
@@ -2988,9 +2988,11 @@ function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType
   blocks.push({
     type: 'activation',
     icon: '⚡',
+    titleKey: 'blkActivation',
+    detailKey: 'blkActivationDetail',
     title: lang === 'IT' ? 'Attivazione — 4×25m' : 'Activation — 4×25m',
     detail: lang === 'IT' ? '12.5m sprint + 12.5m sciolto' : '12.5m sprint + 12.5m easy',
-    zones: getPaceZones(pb, pool, style, 25, 'C2'),
+    zones: getPaceZones(pbs, pool, style, 25, 'C2'),
     volume: 100,
     stressScore: 6,
   });
@@ -3020,8 +3022,9 @@ function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType
         blocks.push({
           type: 'main', icon: '🟠',
           title: `${reps}×${d}m ${style}`,
+          zoneKey: zseq[si], labelObj: blk.label,
           detail: `${zseq[si]} — ${lang === 'IT' ? blk.label.it : blk.label.en}`,
-          zones: getPaceZones(pb, pool, style, d, zseq[si]),
+          zones: getPaceZones(pbs, pool, style, d, zseq[si]),
           volume: reps * d,
           stressScore: Math.round((d / 100) * reps * zInfo.stressFactor),
         });
@@ -3045,8 +3048,9 @@ function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType
       blocks.push({
         type: 'main', icon: '🟠',
         title: `${reps}×${dist}m ${style}`,
+        zoneKey: resolvedBlk.zone, labelObj: resolvedBlk.label,
         detail: `${resolvedBlk.zone} — ${lang === 'IT' ? resolvedBlk.label.it : resolvedBlk.label.en}`,
-        zones: getPaceZones(pb, pool, style, dist, resolvedBlk.zone),
+        zones: getPaceZones(pbs, pool, style, dist, resolvedBlk.zone),
         volume: vol,
         stressScore: Math.round((dist / 100) * reps * zInfo.stressFactor),
       });
@@ -3061,9 +3065,12 @@ function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType
 
   blocks.push({
     type: 'cool', icon: '⚪',
+    titleKey: 'blkCool',
+    detailKey: 'blkCoolDetail',
+    coolDist, style,
     title: lang === 'IT' ? `Defaticamento — ${coolDist}m` : `Cool-down — ${coolDist}m`,
     detail: `${style} A2 — ${lang === 'IT' ? 'scioltezza assoluta' : 'easy, relax'}`,
-    zones: getPaceZones(pb, pool, style, 100, 'A2'),
+    zones: getPaceZones(pbs, pool, style, 100, 'A2'),
     volume: coolDist,
     stressScore: 1,
   });
@@ -3073,7 +3080,7 @@ function buildSession(pb, centralBlocks, factor, dayCode, weekIndex, sessionType
   const dayLabels = state.lang === 'IT' ? ALL_DAYS_IT : ALL_DAYS_EN;
   const dayLabel = dayLabels[ALL_DAYS_CODES.indexOf(dayCode)] || dayCode;
 
-  return { day: dayCode, dayLabel, title: buildSessionTitle(sessionType, trainState.goal), blocks, totalVolume, totalStress };
+  return { day: dayCode, dayLabel, sessionType, goal: trainState.goal, title: buildSessionTitle(sessionType, trainState.goal), blocks, totalVolume, totalStress };
 }
 
 function buildSessionTitle(sessionType, goal) {
@@ -3100,10 +3107,14 @@ const ZONES_INFO = {
   C2: { coef:0.98, color:'var(--z-c2)', stressFactor:12 },
 };
 
-function getPaceZones(pb, pool, style, dist, targetZone) {
+function getPaceZones(pbList, pool, style, dist, targetZone) {
+  const pb = pickPB(pbList, style, dist);
+  if (!pb) return null;
   const allZones = calcZones(pb.cs, pool, style, dist, 1.5, pb.dist);
-  const zone = allZones.find(z => z.key === targetZone);
-  return zone ? [zone] : allZones.slice(0, 1);
+  const zone = allZones.find(z => z.key === targetZone) || allZones[0];
+  if (!zone) return null;
+  // unit = distanza su cui il passo è espresso (FIX 4)
+  return [{ ...zone, unit: dist }];
 }
 
 // ══════════════════════════════════════════════════════
@@ -3173,13 +3184,45 @@ function renderWeekSessions(sessions) {
   list.innerHTML = sessions.map(s => renderSessionCard(s)).join('');
 }
 
+// Traduce un blocco al momento del render.
+// I piani salvati con la vecchia forma (solo title/detail congelati) cadono sul fallback.
+function resolveBlockText(b) {
+  const it = state.lang === 'IT';
+  let title = b.title;
+  let detail = b.detail;
+  switch (b.titleKey) {
+    case 'blkWarmup':
+      title = it ? 'Riscaldamento' : 'Warm-up'; break;
+    case 'blkTech':
+      title = it ? `Tecnica — ${b.techReps}×${b.techPoolLen}m`
+                 : `Technique — ${b.techReps}×${b.techPoolLen}m`; break;
+    case 'blkActivation':
+      title = it ? 'Attivazione — 4×25m' : 'Activation — 4×25m'; break;
+    case 'blkCool':
+      title = it ? `Defaticamento — ${b.coolDist}m` : `Cool-down — ${b.coolDist}m`; break;
+  }
+  if (b.techPair) {
+    detail = b.techPair.map(x => it ? x.it : x.en).join(' · ');
+  } else if (b.detailKey === 'blkWarmupDetail') {
+    detail = `500m ${b.style} A2`;
+  } else if (b.detailKey === 'blkActivationDetail') {
+    detail = it ? '12.5m sprint + 12.5m sciolto' : '12.5m sprint + 12.5m easy';
+  } else if (b.detailKey === 'blkCoolDetail') {
+    detail = `${b.style} A2 — ${it ? 'scioltezza assoluta' : 'easy, relax'}`;
+  } else if (b.labelObj) {
+    detail = `${b.zoneKey} — ${it ? b.labelObj.it : b.labelObj.en}`;
+  }
+  return { title, detail };
+}
+
 function renderSessionCard(session) {
   const blocksHTML = session.blocks.map(b => {
+    const txt = resolveBlockText(b);
     const zoneRows = b.zones
       ? b.zones.map(z => `
           <div class="block-zone-row">
             <span class="block-zone-key" style="color:${z.color}">${z.key}</span>
-            <span class="block-zone-pace">${z.pace}</span>
+            <span class="block-zone-pace">${z.pace}${z.unit ? `<span class="block-zone-unit">/${z.unit}m</span>` : ''}</span>
             <span class="block-zone-int">@ ${z.int}</span>
           </div>`).join('')
       : '';
@@ -3187,19 +3230,26 @@ function renderSessionCard(session) {
       <div class="block-row">
         <div class="block-icon">${b.icon}</div>
         <div class="block-content">
-          <div class="block-title">${b.title}</div>
-          <div class="block-detail">${b.detail}</div>
+          <div class="block-title">${txt.title}</div>
+          <div class="block-detail">${txt.detail}</div>
           ${zoneRows ? `<div class="block-zones">${zoneRows}</div>` : ''}
         </div>
       </div>`;
   }).join('');
 
+  const dayLabels = state.lang === 'IT' ? ALL_DAYS_IT : ALL_DAYS_EN;
+  const dayIdx = ALL_DAYS_CODES.indexOf(session.day);
+  const dayLabel = dayIdx >= 0 ? dayLabels[dayIdx] : session.dayLabel;
+  const sessTitle = session.sessionType
+    ? buildSessionTitle(session.sessionType, session.goal || trainState.goal)
+    : session.title;
+
   return `
     <div class="session-card">
       <div class="session-card-header">
         <div>
-          <div class="session-day-badge">${session.dayLabel}</div>
-          <div class="session-title">${session.title}</div>
+          <div class="session-day-badge">${dayLabel}</div>
+          <div class="session-title">${sessTitle}</div>
           <div class="session-meta">${session.totalVolume}m</div>
         </div>
         <div style="font-family:var(--font-data); font-size:0.72rem; color:var(--app-color); font-weight:700;">
@@ -3754,6 +3804,10 @@ function renderAll() {
   renderWorkoutsList();
   updatePaywallBanners();
   initTrainingUI();
+  renderPaces();
+  renderAnalytics();
+  renderSavedPlans();
+  if (trainState.generatedPlan) renderPlanOutput();
   applyLang();
 }
 
