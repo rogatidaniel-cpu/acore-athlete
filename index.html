@@ -587,7 +587,7 @@ nav {
   backdrop-filter: blur(6px);
   z-index: 200;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   padding: 16px;
   animation: fadeIn 0.2s ease;
@@ -661,7 +661,7 @@ nav {
 .stress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--z-a2), var(--z-b1), var(--z-b2), var(--z-c1), var(--z-c2)); transition: width 0.5s ease; }
 .effort-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
 .effort-btn { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 4px; border:var(--border); border-radius:10px; background:transparent; color:var(--ink-secondary); cursor:pointer; transition:all .2s; }
-.effort-btn.active { border-color:var(--app-color); background:rgba(124,58,237,.12); color:var(--ink-primary); }
+.effort-btn.active { border-color:var(--app-color); background:rgba(45,212,191,.12); color:var(--ink-primary); }
 .effort-simple { font-weight:700; font-size:0.82rem; }
 .effort-tech { font-size:0.6rem; opacity:0.7; font-family:var(--font-data); }
 .pmc-numbers { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px; }
@@ -1217,7 +1217,7 @@ nav {
           <div id="planMeta" style="font-size:0.72rem; color:var(--ink-secondary); font-family:var(--font-data); margin-top:2px;"></div>
         </div>
         <div style="display:flex; gap:6px;">
-          <button class="btn btn-sm btn-secondary" onclick="savePlan()" id="btnSavePlan" style="display:none;">💾 Salva</button>
+          <button class="btn btn-sm btn-secondary" onclick="savePlan()" id="btnSavePlan" data-i18n="btnSavePlan" style="display:none;">💾 Salva</button>
           <button class="btn btn-sm btn-secondary" onclick="resetPlan()">✕</button>
         </div>
       </div>
@@ -1235,13 +1235,13 @@ nav {
         </div>
       </div>
 
-      <!-- SESSIONI -->
-      <div id="sessionsList"></div>
-
       <!-- MULTI-WEEK NAVIGATOR (solo Pro) -->
-      <div id="multiWeekNav" style="display:none; margin-top:8px;">
+      <div id="multiWeekNav" style="display:none; margin-bottom:8px;">
         <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;" id="weekTabs"></div>
       </div>
+
+      <!-- SESSIONI -->
+      <div id="sessionsList"></div>
 
     </div>
 
@@ -1829,7 +1829,7 @@ const i18n = {
     raceHistory:'Storico Risultati', analyticsEmpty:'Inserisci PB e risultati gara per vedere le tue analytics.',
     pbProgression:'Progressione PB', masterCategory:'Posizione categoria', weeklyLoad:'Carico settimanale',
     pmcTitle:'Condizione di forma', labelSessionEffort:'Intensità', effortEasy:'Facile', effortMedium:'Medio', effortHard:'Duro', effortRace:'Gara', effortSprint:'Sprint',
-    modalAddPBTitle:'Aggiungi / Aggiorna PB', modalEditPBTitle:'Modifica PB', labelTime:'Tempo', labelPBDate:'Data PB', btnSavePB:'Salva PB',
+    modalAddPBTitle:'Aggiungi / Aggiorna PB', modalEditPBTitle:'Modifica PB', labelTime:'Tempo', labelPBDate:'Data PB', btnSavePB:'Salva PB', btnSavePlan:'💾 Salva',
     legendTitle:'Legenda Zone & Hydro-Load', legendDesc:'ACore Athlete usa lo stesso motore di calcolo di ACore Coach — personalizzato sul tuo PB.',
     btnGotIt:'Capito!', modalResultTitle:'Inserisci Risultato Gara', labelResultTime:'Tempo ufficiale', btnSaveResult:'Salva Risultato',
     visaAlertTitle:'Visita medica in scadenza', masterCatTitle:'Categoria', masterCatNote:'Tempi di riferimento World Aquatics per categoria Master.',
@@ -1887,7 +1887,7 @@ const i18n = {
     raceHistory:'Race Results History', analyticsEmpty:'Add PBs and race results to see your analytics.',
     pbProgression:'PB Progression', masterCategory:'Category standing', weeklyLoad:'Weekly load',
     pmcTitle:'Form & condition', labelSessionEffort:'Intensity', effortEasy:'Easy', effortMedium:'Medium', effortHard:'Hard', effortRace:'Race', effortSprint:'Sprint',
-    modalAddPBTitle:'Add / Update PB', modalEditPBTitle:'Edit PB', labelTime:'Time', labelPBDate:'PB date', btnSavePB:'Save PB',
+    modalAddPBTitle:'Add / Update PB', modalEditPBTitle:'Edit PB', labelTime:'Time', labelPBDate:'PB date', btnSavePB:'Save PB', btnSavePlan:'💾 Save',
     legendTitle:'Zone Legend & Hydro-Load', legendDesc:'ACore Athlete uses the same calculation engine as ACore Coach — personalized to your PB.',
     btnGotIt:'Got it!', modalResultTitle:'Enter Race Result', labelResultTime:'Official time', btnSaveResult:'Save Result',
     visaAlertTitle:'Medical certificate expiring soon', masterCatTitle:'Category', masterCatNote:'World Aquatics reference times for Master categories.',
@@ -1926,10 +1926,10 @@ const i18n = {
 // ══════════════════════════════════════════════════════
 const ZONES = {
   A2: { coef: 1.18, color: 'var(--z-a2)', stressFactor: 1 },
-  B1: { coef: 1.10, color: 'var(--z-b1)', stressFactor: 3 },
-  B2: { coef: 1.04, color: 'var(--z-b2)', stressFactor: 5 },
-  C1: { coef: 1.00, color: 'var(--z-c1)', stressFactor: 8 },
-  C2: { coef: 0.98, color: 'var(--z-c2)', stressFactor: 12 }
+  B1: { coef: 1.10, color: 'var(--z-b1)', stressFactor: 2.25 },
+  B2: { coef: 1.04, color: 'var(--z-b2)', stressFactor: 3.5 },
+  C1: { coef: 1.00, color: 'var(--z-c1)', stressFactor: 4.75 },
+  C2: { coef: 0.98, color: 'var(--z-c2)', stressFactor: 5.5 }
 };
 const PENALTY = {
   '25m':  { SL:0,    DO:0,    RA:0,    FA:0,    MI:0 },
@@ -2580,7 +2580,8 @@ function renderPaces() {
   content.style.display = 'block';
 
   const pool = pb.pool || '25m'; // usa la vasca del PB
-  document.getElementById('paceDistLabel').textContent = `${style} ${dist}m · ${pool}`;
+  document.getElementById('paceDistLabel').textContent =
+    `${style} ${dist}m · ${state.lang === 'IT' ? 'vasca' : 'pool'} ${pool}`;
 
   const zones = calcZones(pb.cs, pool, style, dist, delta, pb.dist);
   const zoneLabels = t('zoneLabels');
@@ -2627,7 +2628,21 @@ function calcCustomWorkout() {
   const zoneLabels = t('zoneLabels');
 
   blocks.forEach(block => {
-    const pb = pickPB(state.pbs, block.style, block.dist) || state.pbs[0];
+    const pb = pickPB(state.pbs, block.style, block.dist);
+    if (!pb) {
+      resultDiv.innerHTML += `
+        <div class="card" style="margin:0;">
+          <div class="card-header" style="background:var(--bg-overlay);">
+            <span style="font-weight:700;font-size:1rem;color:var(--app-color);font-family:var(--font-data);">${block.reps} × ${block.dist} ${block.style}</span>
+          </div>
+          <div style="padding:14px;color:var(--ink-secondary);font-size:0.84rem;">
+            ${state.lang === 'IT'
+              ? `Nessun PB per <strong style="color:var(--app-color)">${block.style}</strong> — aggiungilo nella tab Profilo.`
+              : `No PB for <strong style="color:var(--app-color)">${block.style}</strong> — add it in the Profile tab.`}
+          </div>
+        </div>`;
+      return;
+    }
     const zones = calcZones(pb.cs, pool, block.style, block.dist, delta, pb.dist);
     resultDiv.innerHTML += `
       <div class="card" style="margin:0;">
@@ -2731,6 +2746,16 @@ const WEEKLY_VOLUME = {
     // sett2: pre-gara, minimo
     { mainReps: 4,  mainDist: 50,  mainZone: 'C1' },
   ],
+};
+
+// Etichetta generica per zona, usata quando WEEKLY_VOLUME sovrascrive
+// la zona del blocco e quella della matrice non è più pertinente.
+const ZONE_BLOCK_LABEL = {
+  A2: { it:'Volume aerobico',  en:'Aerobic volume' },
+  B1: { it:'Soglia aerobica',  en:'Aerobic threshold' },
+  B2: { it:'Potenza aerobica', en:'Aerobic power' },
+  C1: { it:'Ritmo gara',       en:'Race pace' },
+  C2: { it:'Velocità',         en:'Speed' },
 };
 
 // Blocchi accessori per zona (attivazione, sprint brevi) — invariati per settimana
@@ -3036,7 +3061,14 @@ function buildSession(pbs, centralBlocks, factor, dayCode, weekIndex, sessionTyp
         const weekVol = WEEKLY_VOLUME[trainState.phase][weekIndex] || WEEKLY_VOLUME[trainState.phase][0];
         reps = weekVol.mainReps;
         dist = weekVol.mainDist;
-        resolvedBlk = { ...blk, zone: weekVol.mainZone, dist: weekVol.mainDist };
+        resolvedBlk = {
+          ...blk,
+          zone: weekVol.mainZone,
+          dist: weekVol.mainDist,
+          label: weekVol.mainZone !== blk.zone
+            ? (ZONE_BLOCK_LABEL[weekVol.mainZone] || blk.label)
+            : blk.label,
+        };
       } else {
         reps = Math.max(1, Math.round(blk.reps * factor));
         dist = blk.dist;
@@ -3101,10 +3133,10 @@ function buildSessionTitle(sessionType, goal) {
 
 const ZONES_INFO = {
   A2: { coef:1.18, color:'var(--z-a2)', stressFactor:1 },
-  B1: { coef:1.10, color:'var(--z-b1)', stressFactor:3 },
-  B2: { coef:1.04, color:'var(--z-b2)', stressFactor:5 },
-  C1: { coef:1.00, color:'var(--z-c1)', stressFactor:8 },
-  C2: { coef:0.98, color:'var(--z-c2)', stressFactor:12 },
+  B1: { coef:1.10, color:'var(--z-b1)', stressFactor:2.25 },
+  B2: { coef:1.04, color:'var(--z-b2)', stressFactor:3.5 },
+  C1: { coef:1.00, color:'var(--z-c1)', stressFactor:4.75 },
+  C2: { coef:0.98, color:'var(--z-c2)', stressFactor:5.5 },
 };
 
 function getPaceZones(pbList, pool, style, dist, targetZone) {
@@ -3169,8 +3201,10 @@ function renderWeekSessions(sessions) {
   let totalVol = 0, totalStress = 0;
   sessions.forEach(s => { totalVol += s.totalVolume; totalStress += s.totalStress; });
 
-  const maxStress = sessions.length * 100;
-  const pct = Math.min(100, Math.round((totalStress / maxStress) * 100));
+  // Soglia settimanale fissa: il carico della settimana non deve dipendere
+  // da come è distribuito sui giorni.
+  const WEEK_LOAD_MAX = 300;
+  const pct = Math.min(100, Math.round((totalStress / WEEK_LOAD_MAX) * 100));
   document.getElementById('weekStressValue').textContent = `${totalVol}m · ${totalStress} pts`;
   document.getElementById('weekStressFill').style.width = pct + '%';
 
@@ -3540,7 +3574,7 @@ function updatePaywallBanners() {
 // ══════════════════════════════════════════════════════
 // Fattore di normalizzazione: porta lo stress "Training 2.0" su scala TSS-like.
 // Tararlo se i numeri risultano troppo alti/bassi (obiettivo: sessione media ~40-80).
-const PMC_NORMALIZE = 2.0;
+const PMC_NORMALIZE = 1.35;
 
 // TSS di una singola sessione. Ibrido: HR se disponibile, altrimenti zona sforzo.
 function sessionTSS(w) {
@@ -3591,8 +3625,11 @@ function buildPMCSeries() {
 }
 
 // Stato leggibile dal TSB
-function tsbStatus(tsb) {
+function tsbStatus(tsb, ctl) {
   const IT = state.lang === 'IT';
+  // Con un CTL basso il TSB non è informativo: si è freschi per assenza di carico.
+  if (ctl != null && ctl < 15)
+    return { txt: IT ? 'Base insufficiente — continua ad allenarti' : 'Insufficient base — keep training', color: 'var(--ink-secondary)' };
   if (tsb > 15)  return { txt: IT ? 'Fresco / scarico' : 'Fresh / tapered', color: 'var(--z-a2)' };
   if (tsb >= -10) return { txt: IT ? 'In forma, pronto' : 'Fit and ready', color: 'var(--z-b1)' };
   if (tsb >= -30) return { txt: IT ? 'In carico' : 'Building load', color: 'var(--z-b2)' };
@@ -3641,7 +3678,7 @@ function renderPMC() {
     return;
   }
   const last = series[series.length - 1];
-  const st = tsbStatus(last.tsb);
+  const st = tsbStatus(last.tsb, last.ctl);
   const isFree = !state.isPro;
 
   const numbers = `<div class="pmc-numbers">
