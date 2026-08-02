@@ -1073,11 +1073,11 @@ nav {
             <div>
               <label class="form-label" data-i18n="labelStyle">Stile</label>
               <select id="paceStyle" onchange="renderPaces()">
-                <option value="SL">SL — Stile Libero</option>
-                <option value="DO">DO — Dorso</option>
-                <option value="RA">RA — Rana</option>
-                <option value="FA">FA — Farfalla</option>
-                <option value="MI">MI — Misti</option>
+                <option value="SL" data-i18n="optSL">SL — Stile Libero</option>
+                <option value="DO" data-i18n="optDO">DO — Dorso</option>
+                <option value="RA" data-i18n="optRA">RA — Rana</option>
+                <option value="FA" data-i18n="optFA">FA — Farfalla</option>
+                <option value="MI" data-i18n="optMI">MI — Misti</option>
               </select>
             </div>
             <div>
@@ -1147,17 +1147,17 @@ nav {
         <!-- RIGA 1: Stile + Evento target -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
           <div>
-            <label class="form-label" id="lblTrainStyle">Stile principale</label>
+            <label class="form-label" id="lblTrainStyle" data-i18n="labelMainStyle">Stile principale</label>
             <select id="trainStyle">
-              <option value="SL">SL — Stile Libero</option>
-              <option value="DO">DO — Dorso</option>
-              <option value="RA">RA — Rana</option>
-              <option value="FA">FA — Farfalla</option>
-              <option value="MI">MI — Misti</option>
+              <option value="SL" data-i18n="optSL">SL — Stile Libero</option>
+              <option value="DO" data-i18n="optDO">DO — Dorso</option>
+              <option value="RA" data-i18n="optRA">RA — Rana</option>
+              <option value="FA" data-i18n="optFA">FA — Farfalla</option>
+              <option value="MI" data-i18n="optMI">MI — Misti</option>
             </select>
           </div>
           <div>
-            <label class="form-label" id="lblTrainGoal">Evento obiettivo</label>
+            <label class="form-label" id="lblTrainGoal" data-i18n="labelGoalEvent">Evento obiettivo</label>
             <select id="trainGoal">
               <option value="sprint">Sprint (50–100m)</option>
               <option value="middle">Mezzofondo (200–400m)</option>
@@ -1168,7 +1168,7 @@ nav {
 
         <!-- RIGA 2: Fase -->
         <div>
-          <label class="form-label" id="lblTrainPhase">Fase di allenamento</label>
+          <label class="form-label" id="lblTrainPhase" data-i18n="labelTrainPhase">Fase di allenamento</label>
           <div class="toggle-group" style="flex-wrap:wrap; gap:4px;">
             <button class="toggle-btn active" id="tpBase"  onclick="setTrainPhase('base')">🟢 Base</button>
             <button class="toggle-btn" id="tpBuild" onclick="setTrainPhase('build')">🟡 Build</button>
@@ -1179,7 +1179,7 @@ nav {
 
         <!-- RIGA 3: Giorni disponibili -->
         <div>
-          <label class="form-label" id="lblTrainDays">Giorni di allenamento</label>
+          <label class="form-label" id="lblTrainDays" data-i18n="labelTrainDays">Giorni di allenamento</label>
           <div style="display:flex; flex-wrap:wrap; gap:6px;" id="trainDaysSelector">
             <!-- generato da JS -->
           </div>
@@ -1187,7 +1187,7 @@ nav {
 
         <!-- RIGA 4: Vasca -->
         <div>
-          <label class="form-label" id="lblTrainPool">Vasca</label>
+          <label class="form-label" id="lblTrainPool" data-i18n="labelTrainPool">Vasca</label>
           <div class="toggle-group">
             <button class="toggle-btn active" id="trainPool25m" onclick="setTrainPool('25m')">25m</button>
             <button class="toggle-btn" id="trainPool50m" onclick="setTrainPool('50m')">50m</button>
@@ -1355,11 +1355,11 @@ nav {
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
           <div>
-            <label class="form-label">Tempo virata (sec)</label>
+            <label class="form-label" data-i18n="labelTurnTime">Tempo virata (sec)</label>
             <input type="number" id="techTurn" placeholder="Es. 0.8" step="0.1" min="0">
           </div>
           <div>
-            <label class="form-label">Tempo partenza (sec)</label>
+            <label class="form-label" data-i18n="labelStartTime">Tempo partenza (sec)</label>
             <input type="number" id="techStart" placeholder="Es. 0.65" step="0.01" min="0">
           </div>
         </div>
@@ -1630,11 +1630,11 @@ nav {
         <div>
           <label class="form-label" data-i18n="labelStyle">Stile</label>
           <select id="pbStyle" onchange="rebuildPBDists()">
-            <option value="SL">SL — Stile Libero</option>
-            <option value="DO">DO — Dorso</option>
-            <option value="RA">RA — Rana</option>
-            <option value="FA">FA — Farfalla</option>
-            <option value="MI">MI — Misti</option>
+            <option value="SL" data-i18n="optSL">SL — Stile Libero</option>
+            <option value="DO" data-i18n="optDO">DO — Dorso</option>
+            <option value="RA" data-i18n="optRA">RA — Rana</option>
+            <option value="FA" data-i18n="optFA">FA — Farfalla</option>
+            <option value="MI" data-i18n="optMI">MI — Misti</option>
           </select>
         </div>
         <div>
@@ -1718,11 +1718,11 @@ nav {
       <div>
         <label class="form-label" data-i18n="labelSessionStyle">Stile</label>
         <select id="sessStyle">
-          <option value="SL">SL — Stile Libero</option>
-          <option value="DO">DO — Dorso</option>
-          <option value="RA">RA — Rana</option>
-          <option value="FA">FA — Farfalla</option>
-          <option value="MI">MI — Misti</option>
+          <option value="SL" data-i18n="optSL">SL — Stile Libero</option>
+          <option value="DO" data-i18n="optDO">DO — Dorso</option>
+          <option value="RA" data-i18n="optRA">RA — Rana</option>
+          <option value="FA" data-i18n="optFA">FA — Farfalla</option>
+          <option value="MI" data-i18n="optMI">MI — Misti</option>
         </select>
       </div>
       <div>
@@ -1776,7 +1776,7 @@ nav {
         </div>
       </div>
       <div>
-        <label class="form-label">Note</label>
+        <label class="form-label" data-i18n="labelNotes">Note</label>
         <textarea id="resultNotes" style="min-height:60px; resize:vertical;" placeholder="Come è andata? Sensazioni, condizioni..."></textarea>
       </div>
       <button class="btn btn-acid btn-full" onclick="saveRaceResult()" data-i18n="btnSaveResult">Salva Risultato</button>
@@ -1860,6 +1860,65 @@ const i18n = {
     modalAddSessionTitle:'Aggiungi sessione', labelSessionDate:'Data', labelSessionDistance:'Distanza (m)',
     labelSessionDuration:'Durata', labelSessionStyle:'Stile', labelSessionPool:'Vasca', labelSessionNotes:'Note (opzionale)',
     btnAddSession:'+ Aggiungi', btnSaveSession:'Salva Sessione', toastSessionSaved:'✅ Sessione salvata',
+    // ── Libreria tecnica ──
+    techPosition:'Posizione in acqua', techBracciata:'Bracciata', techCalciata:'Calciata', techRespiro:'Respirazione',
+    techSLPos:'Corpo orizzontale, testa in linea con la schiena. Occhi verso il fondo. Le anche devono rimanere in superficie.',
+    techSLBra:'Entrata mano davanti alla spalla, non oltre la testa. Fase di presa con gomito alto. Spinta fino alla coscia prima dell\'uscita.',
+    techSLKick:'Calci alternati con caviglie flessibili. Ampiezza contenuta (20-30 cm). Propulsione principalmente dalle ginocchia in giù.',
+    techSLBreath:'Rotazione minima del corpo. Occhio appena sopra il pelo dell\'acqua. Espira sott\'acqua in modo continuo.',
+    techDOPos:'Schiena parallela al pelo dell\'acqua. Orecchie immerse. Fianchi vicini alla superficie.',
+    techDOBra:'Entrata del pollice prima, mano ruotata. Fase di presa profonda. Uscita con il mignolo, gomito piegato.',
+    techDOKick:'Calci alternati, ginocchia appena sotto la superficie. Propulsione nella fase verso l\'alto.',
+    techRABra:'Apertura orizzontale (non verso il basso). Gomiti alti nella presa. Mani che si uniscono davanti al petto prima dell\'estensione.',
+    techRALegs:'Talloni verso i glutei (non i ginocchi). Piedi ruotati verso l\'esterno (come i piedi di un\'anatra). Spinta potente e simmetrica.',
+    techRATime:'La rana è lo stile della coordinazione: Presa → Respiro → Spinta gambe → Scivolata. Il timing è tutto.',
+    techFABody:'Ondulazione dalla testa fino ai piedi. Il movimento parte dai fianchi. Prima spinge la testa in basso, poi i fianchi su.',
+    techFABra:'Entrata delle mani a larghezza spalle. Fase di presa larga con gomiti alti. Spinta potente fino alle cosce.',
+    techFALegs:'Due calci per ciclo bracciata. Primo calcio all\'entrata delle mani, secondo alla spinta. Caviglie flessibili fondamentali.',
+    techSTStart:'Posizione di partenza',
+    techSTStartText:'Piedi a larghezza spalle sul blocco. Grip forte. Centro di gravità basso. Sguardo verso l\'acqua.',
+    techSTFlight:'Fase di volo',
+    techSTFlightText:'Partenza esplosiva con spinta dei piedi. Corpo aerodinamico: braccia tese, testa tra le spalle, gambe unite.',
+    techSTEntry:'Entrata in acqua',
+    techSTEntryText:'Angolo di entrata 30-40°. Mani unite a formare un "buco" per il corpo. Minimizzare la resistenza.',
+    techSTUnder:'Fase subacquea',
+    techSTUnderText:'SL/DO/FA: delfino subacqueo fino a 15m. RA: una bracciata subacquea completa (regolamento). Velocità massima prima di emergere.',
+    techVIFlip:'Inizia la rotazione a 1-1.5m dal muro. Raccogli le gambe velocemente. Piedi piatti sul muro, non troppo profondi.',
+    techVIPush:'Spinta orizzontale (non verso il fondo). Posizione idrodinamica fino alla riduzione di velocità. Emersione fluida.',
+    techVITouch:'Tocco simultaneo con entrambe le mani. Raggruppamento rapido. Spinta potente con entrambi i piedi.',
+    // ── Errori comuni ──
+    commonErrors:'❌ Errori comuni:',
+    errSLHead:'Testa alta →', errSLHeadFix:'Abbassa la testa, le anche scendono di riflesso.',
+    errSLElbow:'Gomito basso →', errSLElbowFix:'Esercizio: presa con pugni chiusi per sentire il gomito alto.',
+    errSLKick:'Calci con le ginocchia →', errSLKickFix:'Usa le pinne corte in allenamento per correggere il gesto.',
+    errDOHip:'Anche che affondano →', errDOHipFix:'Contrai addome e glutei. Esercizio: nuoto con braccia lungo i fianchi.',
+    errDOEntry:'Entrata troppo larga →', errDOEntryFix:'Entra sempre nella larghezza della spalla, mai oltre.',
+    errRAKnee:'Ginocchia troppo larghe →', errRAKneeFix:'Aumenta la resistenza frontale. Tieni le ginocchia a larghezza spalle.',
+    errRAGlide:'Nessuna scivolata →', errRaGlideFix:'Dopo la spinta gambe mantieni la posizione di freccia per 1-2 secondi.',
+    errFAFlat:'Nuoto piatto →', errFAFlatFix:'Esercizio: delfino laterale con un braccio, per isolare l\'ondulazione.',
+    errFAArms:'Braccia che entrano troppo vicine →', errFAArmsfix:'Entra a larghezza spalle, mai troppo stretto né troppo largo.',
+    errVILate:'Virata lontana dal muro →', errVILateFix:'Conta le bracciate dall\'ultima bandierina. Standardizza la tua distanza.',
+    errVIFeet:'Piedi profondi →', errVIFeetFix:'La spinta deve essere orizzontale. Controlla con video dalla corsia.',
+    // ── Riscaldamento pre-gara ──
+    wu1title:'Risveglio Aerobico',
+    wu1desc:'500–600m molto lento e sciolto. Temperatura corporea, articolazioni, enzimi aerobici senza produrre lattato.',
+    wu2title:'Sensibilità — Drills',
+    wu2desc:'6×25m o 4×50m esercizi tecnici. Risveglia i recettori periferici e restituisce la presa sull\'acqua.',
+    wu3title:'Attivazione Neurale',
+    wu3desc:'4×15m scatto massimale dal blocco o dall\'acqua. Recupero 60–90". Solo sistema alattacido. Accende il SNC per l\'esplosività.',
+    wu3women:'⚠️ Donne: ultimo obbligatoriamente dal blocco, massimale.',
+    wu4title:'Memorizzazione del Passo',
+    wu4desc:'1–2×50m all\'80–90%. Il cervello memorizza la combinazione esatta di frequenza e ampiezza di bracciata da usare in gara.',
+    warmupMen:'🔵 Uomini', warmupWomen:'🔴 Donne', warmupBeforeCall:'prima della chiamata',
+    warmupGoal:'Obiettivo: trovare la velocità individuale con frequenza e ampiezza di bracciata ottimali. Non stancare, attivare.',
+    // ── Vasca PB ──
+    labelPBPool:'Vasca del PB',
+    pbPoolHint:'La vasca è importante: lo stesso atleta ha tempi diversi in corta e lunga.',
+    labelMainStyle:'Stile principale', labelGoalEvent:'Evento obiettivo', labelTrainPhase:'Fase di allenamento',
+    labelTrainDays:'Giorni di allenamento', labelTrainPool:'Vasca', labelTurnTime:'Tempo virata (sec)',
+    labelStartTime:'Tempo partenza (sec)', labelNotes:'Note',
+    optSL:'SL — Stile Libero', optDO:'DO — Dorso', optRA:'RA — Rana', optFA:'FA — Farfalla', optMI:'MI — Misti',
+    deltaHintHTML:'⚡ <strong>Δ Muro</strong>: secondi aggiunti al PB per simulare il recupero tra le vasche in allenamento. 1.5 sec = allenamento normale. 0 = ritmo gara puro. Aumentalo se stai lavorando su serie lunghe o recupero corto.',
   },
   EN: {
     navProfile:'Profile', navPaces:'Paces', navWorkouts:'Training', navTechnique:'Technique', navRaces:'Races', navAnalytics:'Analytics',
@@ -1918,6 +1977,65 @@ const i18n = {
     modalAddSessionTitle:'Add session', labelSessionDate:'Date', labelSessionDistance:'Distance (m)',
     labelSessionDuration:'Duration', labelSessionStyle:'Stroke', labelSessionPool:'Pool', labelSessionNotes:'Notes (optional)',
     btnAddSession:'+ Add', btnSaveSession:'Save Session', toastSessionSaved:'✅ Session saved',
+    // ── Technique library ──
+    techPosition:'Body position', techBracciata:'Arm stroke', techCalciata:'Kick', techRespiro:'Breathing',
+    techSLPos:'Body horizontal, head in line with the spine. Eyes down. Hips must stay at the surface.',
+    techSLBra:'Hand enters in front of the shoulder, not past the head. Catch phase with a high elbow. Push through to the thigh before exit.',
+    techSLKick:'Alternating kick with loose ankles. Small amplitude (20-30 cm). Propulsion mainly from the knees down.',
+    techSLBreath:'Minimal body rotation. One eye just above the waterline. Exhale continuously underwater.',
+    techDOPos:'Back parallel to the surface. Ears submerged. Hips close to the surface.',
+    techDOBra:'Thumb enters first, hand rotated. Deep catch phase. Exit little finger first, elbow bent.',
+    techDOKick:'Alternating kick, knees just below the surface. Propulsion on the upward phase.',
+    techRABra:'Sweep out horizontally, not downward. High elbows in the catch. Hands meet in front of the chest before extending.',
+    techRALegs:'Heels toward the glutes, not the knees. Feet turned outward (duck feet). Powerful, symmetrical push.',
+    techRATime:'Breaststroke is the coordination stroke: Catch → Breathe → Kick → Glide. Timing is everything.',
+    techFABody:'Undulation from head to feet. The movement starts at the hips. Head presses down first, then the hips rise.',
+    techFABra:'Hands enter at shoulder width. Wide catch with high elbows. Powerful push through to the thighs.',
+    techFALegs:'Two kicks per arm cycle. First kick as the hands enter, second on the push. Flexible ankles are essential.',
+    techSTStart:'Start position',
+    techSTStartText:'Feet shoulder-width on the block. Strong grip. Low centre of gravity. Eyes on the water.',
+    techSTFlight:'Flight phase',
+    techSTFlightText:'Explosive push off the feet. Streamlined body: arms extended, head between the shoulders, legs together.',
+    techSTEntry:'Water entry',
+    techSTEntryText:'Entry angle 30-40°. Hands together forming a "hole" for the body. Minimise drag.',
+    techSTUnder:'Underwater phase',
+    techSTUnderText:'Free/Back/Fly: underwater dolphin up to 15m. Breast: one full underwater pull-out (per the rules). Maximum speed before surfacing.',
+    techVIFlip:'Start the rotation 1-1.5m from the wall. Tuck the legs quickly. Feet flat on the wall, not too deep.',
+    techVIPush:'Push off horizontally, not toward the bottom. Hold the streamline until speed drops. Smooth breakout.',
+    techVITouch:'Simultaneous two-hand touch. Fast tuck. Powerful push with both feet.',
+    // ── Common mistakes ──
+    commonErrors:'❌ Common mistakes:',
+    errSLHead:'Head too high →', errSLHeadFix:'Lower the head and the hips will rise on their own.',
+    errSLElbow:'Dropped elbow →', errSLElbowFix:'Drill: fist swimming, to feel the high elbow.',
+    errSLKick:'Kicking from the knees →', errSLKickFix:'Use short fins in training to correct the pattern.',
+    errDOHip:'Hips sinking →', errDOHipFix:'Engage core and glutes. Drill: swim with arms along the sides.',
+    errDOEntry:'Entry too wide →', errDOEntryFix:'Always enter within shoulder width, never beyond.',
+    errRAKnee:'Knees too wide →', errRAKneeFix:'Increases frontal drag. Keep the knees at shoulder width.',
+    errRAGlide:'No glide →', errRaGlideFix:'After the kick, hold the streamline for 1-2 seconds.',
+    errFAFlat:'Swimming flat →', errFAFlatFix:'Drill: single-arm side dolphin, to isolate the undulation.',
+    errFAArms:'Hands entering too close together →', errFAArmsfix:'Enter at shoulder width, neither too narrow nor too wide.',
+    errVILate:'Turning too far from the wall →', errVILateFix:'Count strokes from the last flag. Standardise your distance.',
+    errVIFeet:'Feet too deep →', errVIFeetFix:'The push must be horizontal. Check with video from poolside.',
+    // ── Pre-race warm-up ──
+    wu1title:'Aerobic Wake-up',
+    wu1desc:'500–600m very slow and loose. Body temperature, joints and aerobic enzymes, without producing lactate.',
+    wu2title:'Feel — Drills',
+    wu2desc:'6×25m or 4×50m technical drills. Wakes up the peripheral receptors and restores the feel for the water.',
+    wu3title:'Neural Activation',
+    wu3desc:'4×15m max sprint from the block or in-water. Recovery 60–90". Alactic system only. Primes the CNS for explosiveness.',
+    wu3women:'⚠️ Women: the last one must be from the block, all out.',
+    wu4title:'Race Pace Rehearsal',
+    wu4desc:'1–2×50m at 80–90%. The brain memorises the exact stroke rate and stroke length to use in the race.',
+    warmupMen:'🔵 Men', warmupWomen:'🔴 Women', warmupBeforeCall:'before the call room',
+    warmupGoal:'Goal: find your individual speed with optimal stroke rate and stroke length. Activate, don\'t fatigue.',
+    // ── PB pool ──
+    labelPBPool:'PB pool length',
+    pbPoolHint:'Pool length matters: the same swimmer posts different times in short and long course.',
+    labelMainStyle:'Main stroke', labelGoalEvent:'Target event', labelTrainPhase:'Training phase',
+    labelTrainDays:'Training days', labelTrainPool:'Pool length', labelTurnTime:'Turn time (sec)',
+    labelStartTime:'Start time (sec)', labelNotes:'Notes',
+    optSL:'FR — Freestyle', optDO:'BK — Backstroke', optRA:'BR — Breaststroke', optFA:'FL — Butterfly', optMI:'IM — Individual Medley',
+    deltaHintHTML:'⚡ <strong>Δ Wall</strong>: seconds added to the PB to simulate the push-off recovery in training. 1.5 sec = normal training. 0 = pure race pace. Raise it if you are working on long sets or short rest.',
   }
 };
 
@@ -2182,6 +2300,10 @@ function applyLang() {
   const btnGenLabel = document.getElementById('btnGenerateLabel');
   if (btnGenLabel && i18n[state.lang].btnGenerateLabel)
     btnGenLabel.textContent = i18n[state.lang].btnGenerateLabel;
+  // Contiene markup: va impostato con innerHTML, non textContent.
+  const dHint = document.getElementById('deltaHint');
+  if (dHint && i18n[state.lang].deltaHintHTML)
+    dHint.innerHTML = i18n[state.lang].deltaHintHTML;
   // Rigenera day selector con la nuova lingua
   renderDaySelector();
 }
