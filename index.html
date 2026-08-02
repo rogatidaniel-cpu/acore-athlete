@@ -36,7 +36,7 @@
   --z-c2: #c084fc;
   --acid: var(--app-color);
   --acid-border: var(--app-color-border);
-  --copper: var(--app-color);
+  --copper: #c98a5b;
   --emerald: #34d399;
   --ice: #7dd3fc;
   --ruby: #ef4444;
@@ -3774,34 +3774,118 @@ function tsbStatus(tsb, ctl) {
 }
 
 // Grafico a linee SVG (CTL, ATL, TSB) sugli ultimi N giorni
+const BAND_DEFS = [
+  { lo:   5, hi:  999, color:'var(--ice)',       it:'scarico',    en:'tapered' },
+  { lo: -10, hi:    5, color:'var(--app-color)', it:'ottimale',   en:'optimal' },
+  { lo: -30, hi:  -10, color:'var(--z-b1)',      it:'produttivo', en:'productive' },
+  { lo:-999, hi:  -30, color:'var(--z-c1)',      it:'rischio',    en:'risk' },
+];
+function pmcTicks(mn, mx, count) {
+  const span = (mx - mn) || 1, raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / mag;
+  const step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * mag;
+  const out = []; for (let v = Math.ceil(mn/step)*step; v <= mx + 1e-9; v += step) out.push(v);
+  return out;
+}
+function pmcPath(pts, close) {
+  if (pts.length < 3) return 'M' + pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L');
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(i-1,0)], p1 = pts[i], p2 = pts[i+1], p3 = pts[Math.min(i+2,pts.length-1)];
+    const c1x = p1[0]+(p2[0]-p0[0])/6, c1y = p1[1]+(p2[1]-p0[1])/6;
+    const c2x = p2[0]-(p3[0]-p1[0])/6, c2y = p2[1]-(p3[1]-p1[1])/6;
+    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
 function renderPMCChart(series, days) {
   const data = series.slice(-days);
-  if (data.length < 2) return '<div style="color:var(--ink-muted);font-size:0.8rem;padding:20px;text-align:center;">' + (state.lang === 'IT' ? 'Servono più sessioni per il grafico.' : 'Need more sessions for the chart.') + '</div>';
+  const IT = state.lang === 'IT';
+  if (data.length < 2) return `<div style="color:var(--ink-muted);font-size:0.8rem;padding:20px;text-align:center;">${IT?'Servono più sessioni per il grafico.':'Need more sessions for the chart.'}</div>`;
+  const W=380, H=210, padL=32, padR=48, padT=20, padB=30;
+  const L=padL, R=W-padR, TOP=padT, BOT=H-padB;
+  const vals = data.flatMap(d => [d.ctl, d.atl, d.tsb]);
+  const maxV = Math.max(...vals, 10), minV = Math.min(...vals, 0), rng = (maxV-minV) || 1;
+  const n = data.length;
+  const x = i => L + (i/(n-1))*(R-L);
+  const y = v => TOP + (1 - (v-minV)/rng)*(BOT-TOP);
+  const idx = {}; data.forEach((d,i) => idx[d.date] = i);
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;" font-family="var(--font-data)">
+  <defs>
+    <linearGradient id="pmcGctl" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--app-color)" stop-opacity="0.38"/><stop offset="100%" stop-color="var(--app-color)" stop-opacity="0"/></linearGradient>
+    <linearGradient id="pmcGatl" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--z-b2)" stop-opacity="0.14"/><stop offset="100%" stop-color="var(--z-b2)" stop-opacity="0"/></linearGradient>
+    <filter id="pmcGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <clipPath id="pmcClip"><rect x="${L}" y="${TOP}" width="${R-L}" height="${BOT-TOP}"/></clipPath>
+  </defs>
+  <rect x="${L}" y="${TOP}" width="${R-L}" height="${BOT-TOP}" rx="4" fill="var(--bg-base)"/>`;
+  BAND_DEFS.forEach(b => {
+    const hi = Math.min(b.hi, maxV), lo = Math.max(b.lo, minV);
+    if (hi <= lo) return;
+    const yt = y(hi), yb = y(lo);
+    s += `<rect x="${L}" y="${yt.toFixed(1)}" width="${R-L}" height="${(yb-yt).toFixed(1)}" fill="${b.color}" opacity="0.055"/>`;
+    if (yb - yt > 11) s += `<text x="${R-4}" y="${((yt+yb)/2+2.3).toFixed(1)}" font-size="6" fill="${b.color}" opacity="0.6" text-anchor="end">${IT?b.it:b.en}</text>`;
+  });
+  pmcTicks(minV, maxV, 4).forEach(t => {
+    const yy = y(t);
+    s += `<line x1="${L}" y1="${yy.toFixed(1)}" x2="${R}" y2="${yy.toFixed(1)}" stroke="var(--ink-muted)" stroke-width="0.5" opacity="0.35"/>`;
+    s += `<text x="${L-5}" y="${(yy+2.5).toFixed(1)}" font-size="7.5" fill="var(--ink-muted)" text-anchor="end">${Math.round(t)}</text>`;
+  });
+  [['atl','pmcGatl'],['ctl','pmcGctl']].forEach(([k,g]) => {
+    const pts = data.map((d,i) => [x(i), y(d[k])]);
+    s += `<path d="${pmcPath(pts)} L${R.toFixed(1)},${BOT} L${L.toFixed(1)},${BOT} Z" fill="url(#${g})" clip-path="url(#pmcClip)"/>`;
+  });
+  if (minV < 0 && maxV > 0) s += `<line x1="${L}" y1="${y(0).toFixed(1)}" x2="${R}" y2="${y(0).toFixed(1)}" stroke="var(--ink-secondary)" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.5"/>`;
+  const inRange = (state.races||[]).filter(r => r.date && idx[String(r.date).slice(0,10)] !== undefined)
+    .sort((a,b) => new Date(a.date) - new Date(b.date));
+  let lastLabelX = -99;
+  inRange.forEach(r => {
+    const i = idx[String(r.date).slice(0,10)], xx = x(i);
+    const col = r.result ? 'var(--z-b1)' : 'var(--z-c2)';
+    s += `<line x1="${xx.toFixed(1)}" y1="${TOP}" x2="${xx.toFixed(1)}" y2="${BOT}" stroke="${col}" stroke-width="0.9" stroke-dasharray="2 2" opacity="0.75"/>`;
+    s += `<circle cx="${xx.toFixed(1)}" cy="${y(data[i].tsb).toFixed(1)}" r="3" fill="${col}" stroke="var(--bg-void)" stroke-width="1.2"/>`;
+    if (xx - lastLabelX >= 30) {
+      const lx = Math.min(Math.max(xx, L+14), R-14);
+      s += `<rect x="${(lx-13).toFixed(1)}" y="${TOP-13}" width="26" height="11" rx="3" fill="${col}" opacity="0.9"/>`;
+      s += `<text x="${lx.toFixed(1)}" y="${TOP-5}" font-size="6.5" fill="var(--bg-void)" font-weight="700" text-anchor="middle">${String(r.event||'').slice(0,6)}</text>`;
+      lastLabelX = xx;
+    }
+  });
+  [...new Set([0, Math.floor(n/3), Math.floor(2*n/3), n-1])].sort((a,b)=>a-b).forEach(i => {
+    const d = data[i].date, anc = i===0 ? 'start' : (i===n-1 ? 'end' : 'middle');
+    s += `<text x="${x(i).toFixed(1)}" y="${BOT+11}" font-size="7.5" fill="var(--ink-muted)" text-anchor="${anc}">${d.slice(8,10)}/${d.slice(5,7)}</text>`;
+  });
+  s += `<text x="${R}" y="${BOT+21}" font-size="6.5" fill="var(--ink-muted)" text-anchor="end" opacity="0.8">${IT?'oggi':'today'}</text>`;
+  [['tsb','var(--copper)','1.5'],['atl','var(--z-b2)','1.6'],['ctl','var(--app-color)','2.3']].forEach(([k,c,w]) => {
+    const pts = data.map((d,i) => [x(i), y(d[k])]);
+    s += `<path d="${pmcPath(pts)}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" filter="url(#pmcGlow)"/>`;
+  });
+  const used = [];
+  [['ctl','var(--app-color)'],['atl','var(--z-b2)'],['tsb','var(--copper)']]
+    .sort((a,b) => data[n-1][b[0]] - data[n-1][a[0]])
+    .forEach(([k,c]) => {
+      const v = data[n-1][k]; let yy = y(v);
+      while (used.some(u => Math.abs(yy-u) < 11)) yy += 11;
+      yy = Math.min(yy, H-4); used.push(yy);
+      s += `<circle cx="${x(n-1).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.8" fill="${c}" stroke="var(--bg-void)" stroke-width="1.2"/>`;
+      s += `<rect x="${R+4}" y="${(yy-6.5).toFixed(1)}" width="41" height="13" rx="3.5" fill="${c}" opacity="0.18"/>`;
+      s += `<text x="${R+8}" y="${(yy+3).toFixed(1)}" font-size="7.2" fill="${c}" font-weight="700">${k.toUpperCase()} ${k==='tsb'&&v>0?'+':''}${Math.round(v)}</text>`;
+    });
+  return s + `</svg>`;
+}
 
-  const W = 320, H = 140, padL = 4, padR = 4, padT = 8, padB = 8;
-  const allVals = data.flatMap(d => [d.ctl, d.atl, d.tsb]);
-  const maxV = Math.max(...allVals, 10);
-  const minV = Math.min(...allVals, 0);
-  const range = (maxV - minV) || 1;
-  const x = i => padL + (i / (data.length - 1)) * (W - padL - padR);
-  const y = v => padT + (1 - (v - minV) / range) * (H - padT - padB);
-
-  const line = (key, color) => {
-    const pts = data.map((d, i) => `${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`).join(' ');
-    return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
-  };
-  const zeroY = y(0);
-
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">
-    <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="var(--ink-muted)" stroke-width="0.5" stroke-dasharray="3 3" opacity="0.4"/>
-    ${line('tsb', 'var(--copper)')}
-    ${line('ctl', 'var(--app-color)')}
-    ${line('atl', 'var(--z-b2)')}
-  </svg>
-  <div style="display:flex;gap:14px;justify-content:center;font-size:0.68rem;margin-top:6px;">
-    <span style="color:var(--app-color)">━ CTL</span>
-    <span style="color:var(--z-b2)">━ ATL</span>
-    <span style="color:var(--copper)">━ TSB</span>
+function pmcLegend() {
+  const IT = state.lang === 'IT';
+  const item = (c, k, t) => `<span style="display:inline-flex;align-items:center;gap:4px;">
+    <span style="width:10px;height:2.5px;border-radius:2px;background:${c};display:inline-block;"></span>
+    <strong style="color:${c};">${k}</strong><span style="color:var(--ink-muted);">${t}</span></span>`;
+  return `<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;font-size:0.66rem;margin-top:8px;">
+    ${item('var(--app-color)', 'CTL', IT ? 'forma' : 'fitness')}
+    ${item('var(--z-b2)', 'ATL', IT ? 'fatica' : 'fatigue')}
+    ${item('var(--copper)', 'TSB', IT ? 'freschezza' : 'form')}
+  </div>
+  <div style="text-align:center;font-size:0.62rem;color:var(--ink-muted);margin-top:4px;">
+    ${IT ? 'Le fasce indicano la zona di TSB. I marcatori verticali sono le tue gare.'
+         : 'The bands show the TSB zone. Vertical markers are your races.'}
   </div>`;
 }
 
@@ -3837,7 +3921,7 @@ function renderPMC() {
       </div>
     </div>`;
   } else {
-    chart = `<div class="pmc-chart-wrap">${renderPMCChart(series, 90)}</div>`;
+    chart = `<div class="pmc-chart-wrap">${renderPMCChart(series, 90)}${pmcLegend()}</div>`;
   }
   host.innerHTML = numbers + chart;
 }
