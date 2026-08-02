@@ -2974,12 +2974,14 @@ function buildWeek(pbs, factor, weekIndex) {
 function buildSession(pbs, centralBlocks, factor, dayCode, weekIndex, sessionType) {
   const lang = state.lang;
   const pool = trainState.pool;
+  const poolLen = parseInt(pool) || 25;   // '25m' -> 25, '50m' -> 50
   const style = trainState.style;
 
   const techLib = TECH_LIBRARY[style] || TECH_LIBRARY['SL'];
   const techIdx1 = (weekIndex * 3 + ALL_DAYS_CODES.indexOf(dayCode)) % techLib.length;
   const techIdx2 = (techIdx1 + 1) % techLib.length;
-  const techPool = weekIndex % 2 === 0 ? 50 : 25;
+  // In vasca 50 la settimana "corta" passa a 100m: i 25 non sono nuotabili.
+  const techPool = weekIndex % 2 === 0 ? 50 : (poolLen === 50 ? 100 : 25);
 
   const blocks = [];
 
@@ -2996,7 +2998,7 @@ function buildSession(pbs, centralBlocks, factor, dayCode, weekIndex, sessionTyp
     stressScore: 5,
   });
 
-  const techReps = techPool === 25 ? 8 : 4;
+  const techReps = Math.round(200 / techPool);   // 25->8, 50->4, 100->2: volume sempre 200m
   blocks.push({
     type: 'tech',
     icon: '🟣',
@@ -3010,15 +3012,20 @@ function buildSession(pbs, centralBlocks, factor, dayCode, weekIndex, sessionTyp
     stressScore: 2,
   });
 
+  const actDist   = poolLen === 50 ? 50 : 25;
+  const actSprint = poolLen === 50 ? 15 : 12.5;
+  const actEasy   = actDist - actSprint;
   blocks.push({
     type: 'activation',
     icon: '⚡',
     titleKey: 'blkActivation',
     detailKey: 'blkActivationDetail',
-    title: lang === 'IT' ? 'Attivazione — 4×25m' : 'Activation — 4×25m',
-    detail: lang === 'IT' ? '12.5m sprint + 12.5m sciolto' : '12.5m sprint + 12.5m easy',
-    zones: getPaceZones(pbs, pool, style, 25, 'C2'),
-    volume: 100,
+    actDist, actSprint, actEasy,
+    title: lang === 'IT' ? `Attivazione — 4×${actDist}m` : `Activation — 4×${actDist}m`,
+    detail: lang === 'IT' ? `${actSprint}m sprint + ${actEasy}m sciolto`
+                          : `${actSprint}m sprint + ${actEasy}m easy`,
+    zones: getPaceZones(pbs, pool, style, actDist, 'C2'),
+    volume: 4 * actDist,
     stressScore: 6,
   });
 
@@ -3048,7 +3055,9 @@ function buildSession(pbs, centralBlocks, factor, dayCode, weekIndex, sessionTyp
           type: 'main', icon: '🟠',
           title: `${reps}×${d}m ${style}`,
           zoneKey: zseq[si], labelObj: blk.label,
-          detail: `${zseq[si]} — ${lang === 'IT' ? blk.label.it : blk.label.en}`,
+          restNote: d < poolLen,
+          detail: `${zseq[si]} — ${lang === 'IT' ? blk.label.it : blk.label.en}`
+                  + (d < poolLen ? (lang === 'IT' ? ' · sciolto fino al muro' : ' · easy to the wall') : ''),
           zones: getPaceZones(pbs, pool, style, d, zseq[si]),
           volume: reps * d,
           stressScore: Math.round((d / 100) * reps * zInfo.stressFactor),
@@ -3081,7 +3090,9 @@ function buildSession(pbs, centralBlocks, factor, dayCode, weekIndex, sessionTyp
         type: 'main', icon: '🟠',
         title: `${reps}×${dist}m ${style}`,
         zoneKey: resolvedBlk.zone, labelObj: resolvedBlk.label,
-        detail: `${resolvedBlk.zone} — ${lang === 'IT' ? resolvedBlk.label.it : resolvedBlk.label.en}`,
+        restNote: dist < poolLen,
+        detail: `${resolvedBlk.zone} — ${lang === 'IT' ? resolvedBlk.label.it : resolvedBlk.label.en}`
+                + (dist < poolLen ? (lang === 'IT' ? ' · sciolto fino al muro' : ' · easy to the wall') : ''),
         zones: getPaceZones(pbs, pool, style, dist, resolvedBlk.zone),
         volume: vol,
         stressScore: Math.round((dist / 100) * reps * zInfo.stressFactor),
@@ -3089,7 +3100,7 @@ function buildSession(pbs, centralBlocks, factor, dayCode, weekIndex, sessionTyp
     }
   });
 
-  const totalSoFar = 500 + techReps * techPool + 100 + mainVolume;
+  const totalSoFar = 500 + techReps * techPool + 4 * actDist + mainVolume;
   let coolDist = 100;
   if (totalSoFar >= 2500) coolDist = 400;
   else if (totalSoFar >= 1500) coolDist = 300;
@@ -3230,8 +3241,10 @@ function resolveBlockText(b) {
     case 'blkTech':
       title = it ? `Tecnica — ${b.techReps}×${b.techPoolLen}m`
                  : `Technique — ${b.techReps}×${b.techPoolLen}m`; break;
-    case 'blkActivation':
-      title = it ? 'Attivazione — 4×25m' : 'Activation — 4×25m'; break;
+    case 'blkActivation': {
+      const ad = b.actDist || 25;
+      title = it ? `Attivazione — 4×${ad}m` : `Activation — 4×${ad}m`; break;
+    }
     case 'blkCool':
       title = it ? `Defaticamento — ${b.coolDist}m` : `Cool-down — ${b.coolDist}m`; break;
   }
@@ -3240,11 +3253,13 @@ function resolveBlockText(b) {
   } else if (b.detailKey === 'blkWarmupDetail') {
     detail = `500m ${b.style} A2`;
   } else if (b.detailKey === 'blkActivationDetail') {
-    detail = it ? '12.5m sprint + 12.5m sciolto' : '12.5m sprint + 12.5m easy';
+    const sp = b.actSprint ?? 12.5, ea = b.actEasy ?? 12.5;
+    detail = it ? `${sp}m sprint + ${ea}m sciolto` : `${sp}m sprint + ${ea}m easy`;
   } else if (b.detailKey === 'blkCoolDetail') {
     detail = `${b.style} A2 — ${it ? 'scioltezza assoluta' : 'easy, relax'}`;
   } else if (b.labelObj) {
     detail = `${b.zoneKey} — ${it ? b.labelObj.it : b.labelObj.en}`;
+    if (b.restNote) detail += it ? ' · sciolto fino al muro' : ' · easy to the wall';
   }
   return { title, detail };
 }
