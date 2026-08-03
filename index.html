@@ -1034,6 +1034,25 @@ nav {
       </div>
     </div>
 
+    <!-- BACKUP -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title" data-i18n="backupTitle">Backup dati</span>
+      </div>
+      <div style="padding: 0 14px 14px;">
+        <div style="font-size:0.72rem; color:var(--ink-secondary); margin-bottom:10px;" data-i18n="backupHint">
+          Scarica una copia dei tuoi dati o ripristinala da un file.
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="exportStateJSON()">
+          <span data-i18n="backupExport">↓ Esporta JSON</span>
+        </button>
+        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('importStateFile').click()" style="margin-top:6px;">
+          <span data-i18n="backupImport">↑ Importa JSON</span>
+        </button>
+        <input type="file" id="importStateFile" accept="application/json" style="display:none;" onchange="importStateJSON(event)">
+      </div>
+    </div>
+
     <!-- SESSIONI -->
     <div class="card" id="sessionsListCard">
       <div class="card-header">
@@ -1856,6 +1875,8 @@ const i18n = {
     stravaSyncTitle:'Sincronizzazione', toastStravaDenied:'⚠️ Connessione Strava annullata',
     stravaSyncNow:'Sincronizza attività', stravaFullSync:'↻ Risincronizza tutto',
     cloudSyncOn: 'Sincronizzato', cloudSyncOff: 'Solo locale',
+    backupTitle:'Backup dati', backupHint:'Scarica una copia dei tuoi dati o ripristinala da un file.',
+    backupExport:'↓ Esporta JSON', backupImport:'↑ Importa JSON',
     sessionsListTitle:'Sessioni registrate', sessionsEmpty:'Nessuna sessione registrata.',
     modalAddSessionTitle:'Aggiungi sessione', labelSessionDate:'Data', labelSessionDistance:'Distanza (m)',
     labelSessionDuration:'Durata', labelSessionStyle:'Stile', labelSessionPool:'Vasca', labelSessionNotes:'Note (opzionale)',
@@ -1973,6 +1994,8 @@ const i18n = {
     stravaSyncTitle:'Sync', toastStravaDenied:'⚠️ Strava connection cancelled',
     stravaSyncNow:'Sync activities', stravaFullSync:'↻ Full resync',
     cloudSyncOn: 'Synced', cloudSyncOff: 'Local only',
+    backupTitle:'Data backup', backupHint:'Download a copy of your data or restore it from a file.',
+    backupExport:'↓ Export JSON', backupImport:'↑ Import JSON',
     sessionsListTitle:'Logged sessions', sessionsEmpty:'No sessions logged yet.',
     modalAddSessionTitle:'Add session', labelSessionDate:'Date', labelSessionDistance:'Distance (m)',
     labelSessionDuration:'Duration', labelSessionStyle:'Stroke', labelSessionPool:'Pool', labelSessionNotes:'Notes (optional)',
@@ -2151,6 +2174,115 @@ async function initDB() {
 
 async function saveState() {
   await db.store.put({ key: 'state', value: JSON.parse(JSON.stringify(state)) });
+  schedulePushState();
+}
+
+// ══════════════════════════════════════════════════════
+// CLOUD SYNC STATE (Supabase) — blob jsonb, last-write-wins
+// ══════════════════════════════════════════════════════
+// workouts/workoutsSyncedAt hanno un sync per-record proprio.
+// isPro viene da profiles: nel blob sarebbe un buco di paywall.
+const SYNC_KEYS = ['lang','profile','pbs','races','savedPlans','phase','completed','techLogs'];
+// stateUpdatedAt resta fuori da SYNC_KEYS: è il cursore locale del pull, non un dato utente da sincronizzare.
+function stateSlice() {
+  const out = {};
+  SYNC_KEYS.forEach(k => { if (state[k] !== undefined) out[k] = state[k]; });
+  return JSON.parse(JSON.stringify(out));
+}
+let __statePushTimer = null;
+// Push differito: saveState() è chiamato spesso a raffica.
+function schedulePushState() {
+  clearTimeout(__statePushTimer);
+  __statePushTimer = setTimeout(() => { pushState(); }, 1500);
+}
+async function pushState() {
+  if (!window.__sb) return false;
+  try {
+    const { data: { session } } = await window.__sb.auth.getSession();
+    if (!session) return false;
+    const { data, error } = await window.__sb
+      .from('app_state')
+      .upsert({ user_id: session.user.id, app: 'athlete', state: stateSlice(), updated_at: new Date().toISOString() },
+              { onConflict: 'user_id,app' })
+      .select('updated_at')
+      .single();
+    if (error) { console.warn('[Cloud] push stato fallito:', error.message); return false; }
+    state.stateUpdatedAt = data?.updated_at || new Date().toISOString();
+    await db.store.put({ key: 'state', value: JSON.parse(JSON.stringify(state)) });
+    return true;
+  } catch (e) {
+    console.warn('[Cloud] push stato errore:', e);
+    return false;
+  }
+}
+// Pull al login. Silenzioso: vince il timestamp più recente.
+async function pullState() {
+  if (!window.__sb) return;
+  try {
+    const { data: { session } } = await window.__sb.auth.getSession();
+    if (!session) return;
+    const { data: row, error } = await window.__sb
+      .from('app_state')
+      .select('state, updated_at')
+      .eq('user_id', session.user.id)
+      .eq('app', 'athlete')
+      .maybeSingle();
+    if (error) { console.warn('[Cloud] pull stato fallito:', error.message); return; }
+    if (!row) { await pushState(); return; }          // primo device: il cloud è vuoto
+    const localTs = state.stateUpdatedAt ? Date.parse(state.stateUpdatedAt) : 0;
+    const cloudTs = Date.parse(row.updated_at);
+    if (cloudTs > localTs) {
+      SYNC_KEYS.forEach(k => { if (row.state[k] !== undefined) state[k] = row.state[k]; });
+      state.stateUpdatedAt = row.updated_at;
+      await db.store.put({ key: 'state', value: JSON.parse(JSON.stringify(state)) });
+      applyLang();
+      rebuildPBDists();
+      renderAll();
+      checkPaywall();
+    } else if (localTs > cloudTs) {
+      await pushState();
+    }
+  } catch (e) {
+    console.warn('[Cloud] pull stato errore:', e);
+  }
+}
+
+function exportStateJSON() {
+  const payload = { app: 'athlete', version: 1, exportedAt: new Date().toISOString(), state: stateSlice() };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `acore-athlete-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(state.lang === 'IT' ? '✓ Backup scaricato' : '✓ Backup downloaded');
+}
+async function importStateJSON(ev) {
+  const file = ev.target.files?.[0];
+  if (!file) return;
+  ev.target.value = '';   // permette di reimportare lo stesso file
+  try {
+    const payload = JSON.parse(await file.text());
+    if (!payload || payload.app !== 'athlete' || !payload.state) {
+      toast(state.lang === 'IT' ? '❌ File non valido' : '❌ Invalid file');
+      return;
+    }
+    const msg = state.lang === 'IT'
+      ? 'Sostituire i dati attuali con quelli del backup? I dati non salvati andranno persi.'
+      : 'Replace current data with the backup? Unsaved data will be lost.';
+    if (!confirm(msg)) return;
+    SYNC_KEYS.forEach(k => { if (payload.state[k] !== undefined) state[k] = payload.state[k]; });
+    await saveState();
+    applyLang();
+    rebuildPBDists();
+    renderAll();
+    checkPaywall();
+    toast(state.lang === 'IT' ? '✓ Backup ripristinato' : '✓ Backup restored');
+  } catch (e) {
+    console.warn('[Backup] import fallito:', e);
+    toast(state.lang === 'IT' ? '❌ Errore nel file' : '❌ File error');
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -4583,6 +4715,7 @@ async function deleteWorkout(id) {
           renderAll();
           await handleStravaCallback();
           await checkStravaConnection();
+          await pullState();
           await syncWorkoutsCloud();
         }
       });
@@ -4591,6 +4724,7 @@ async function deleteWorkout(id) {
     await loadProfile(window.__sb, session.user.id);
     await handleStravaCallback();
     await checkStravaConnection();
+    await pullState();
     await syncWorkoutsCloud();
   } catch(e) {
     console.warn('[ACore Athlete] Auth guard skipped (offline?):', e);
