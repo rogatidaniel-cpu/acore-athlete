@@ -1107,10 +1107,18 @@ nav {
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <label class="form-label" style="margin:0; white-space:nowrap; color:var(--ink-primary); font-weight:700;" data-i18n="labelDelta">Δ Muro (sec)</label>
-            <input type="number" id="paceDelta" value="1.5" step="0.5" style="width:80px; text-align:center; font-family:var(--font-data);" onchange="renderPaces()">
+            <input type="number" id="paceDelta" value="0" step="0.5" style="width:80px; text-align:center; font-family:var(--font-data);" onchange="renderPaces()">
           </div>
           <div style="font-size:0.72rem; color:var(--ink-muted); background:var(--bg-void); border-radius:6px; padding:8px 10px; border-left:3px solid var(--app-color-border);">
             <span id="deltaHint">⚡ <strong>Δ Muro</strong>: secondi aggiunti al PB per simulare il recupero tra le vasche in allenamento. 1.5 sec = allenamento normale. 0 = ritmo gara puro. Aumentalo se stai lavorando su serie lunghe o recupero corto.</span>
+          </div>
+          <div>
+            <label class="form-label" data-i18n="lblZonePhase">Fase stagionale</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active" id="pzStart" data-i18n="pzPhaseStart" onclick="setZonePhase('start')">🟢 Inizio</button>
+              <button class="toggle-btn" id="pzBuild" data-i18n="pzPhaseBuild" onclick="setZonePhase('build')">🟡 Costruzione</button>
+              <button class="toggle-btn" id="pzPeak" data-i18n="pzPhasePeak" onclick="setZonePhase('peak')">🔴 Picco</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1234,6 +1242,7 @@ nav {
         <div>
           <div id="planTitle" style="font-weight:700; font-size:1rem; color:var(--ink-primary);"></div>
           <div id="planMeta" style="font-size:0.72rem; color:var(--ink-secondary); font-family:var(--font-data); margin-top:2px;"></div>
+          <div id="planRefPBWarning" style="display:none; font-size:0.72rem; color:var(--ink-muted); margin-top:4px;"></div>
         </div>
         <div style="display:flex; gap:6px;">
           <button class="btn btn-sm btn-secondary" onclick="savePlan()" id="btnSavePlan" data-i18n="btnSavePlan" style="display:none;">💾 Salva</button>
@@ -1940,6 +1949,8 @@ const i18n = {
     labelStartTime:'Tempo partenza (sec)', labelNotes:'Note',
     optSL:'SL — Stile Libero', optDO:'DO — Dorso', optRA:'RA — Rana', optFA:'FA — Farfalla', optMI:'MI — Misti',
     deltaHintHTML:'⚡ <strong>Δ Muro</strong>: secondi aggiunti al PB per simulare il recupero tra le vasche in allenamento. 1.5 sec = allenamento normale. 0 = ritmo gara puro. Aumentalo se stai lavorando su serie lunghe o recupero corto.',
+    refPBShort: '⚠️ Passi stimati dal PB dei {d}m. Inserisci il PB dei 100m per maggiore precisione.',
+    lblZonePhase: 'Fase stagionale', pzPhaseStart: '🟢 Inizio', pzPhaseBuild: '🟡 Costruzione', pzPhasePeak: '🔴 Picco',
   },
   EN: {
     navProfile:'Profile', navPaces:'Paces', navWorkouts:'Training', navTechnique:'Technique', navRaces:'Races', navAnalytics:'Analytics',
@@ -2059,18 +2070,29 @@ const i18n = {
     labelStartTime:'Start time (sec)', labelNotes:'Notes',
     optSL:'FR — Freestyle', optDO:'BK — Backstroke', optRA:'BR — Breaststroke', optFA:'FL — Butterfly', optMI:'IM — Individual Medley',
     deltaHintHTML:'⚡ <strong>Δ Wall</strong>: seconds added to the PB to simulate the push-off recovery in training. 1.5 sec = normal training. 0 = pure race pace. Raise it if you are working on long sets or short rest.',
+    refPBShort: '⚠️ Paces estimated from your {d}m PB. Add your 100m PB for better accuracy.',
+    lblZonePhase: 'Season phase', pzPhaseStart: '🟢 Start', pzPhaseBuild: '🟡 Build', pzPhasePeak: '🔴 Peak',
   }
 };
 
 // ══════════════════════════════════════════════════════
 // CONSTANTS (stesso motore Coach)
 // ══════════════════════════════════════════════════════
+// Delta additivi in centesimi, riferiti a 100m.
+// Derivati dalla regola FIN B1 = PB100 + 14s, validata su 28 atleti master reali.
+// Il delta additivo riproduce da solo il fatto che i coefficienti relativi
+// scendono al scendere del livello: nessuna correzione per biotipo necessaria qui.
+const ZONE_DELTA = {
+  start: { A2:1800, B1:1400, B2:1000, C1:600, C2:0 },   // inizio stagione
+  build: { A2:1600, B1:1200, B2:900,  C1:500, C2:0 },   // costruzione
+  peak:  { A2:1400, B1:1000, B2:700,  C1:400, C2:0 }    // picco forma
+};
 const ZONES = {
-  A2: { coef: 1.18, color: 'var(--z-a2)', stressFactor: 1 },
-  B1: { coef: 1.10, color: 'var(--z-b1)', stressFactor: 2.25 },
-  B2: { coef: 1.04, color: 'var(--z-b2)', stressFactor: 3.5 },
-  C1: { coef: 1.00, color: 'var(--z-c1)', stressFactor: 4.75 },
-  C2: { coef: 0.98, color: 'var(--z-c2)', stressFactor: 5.5 }
+  A2: { color: 'var(--z-a2)', stressFactor: 1 },
+  B1: { color: 'var(--z-b1)', stressFactor: 2.25 },
+  B2: { color: 'var(--z-b2)', stressFactor: 3.5 },
+  C1: { color: 'var(--z-c1)', stressFactor: 4.75 },
+  C2: { color: 'var(--z-c2)', stressFactor: 5.5 }
 };
 const PENALTY = {
   '25m':  { SL:0,    DO:0,    RA:0,    FA:0,    MI:0 },
@@ -2116,6 +2138,20 @@ function pickPB(list, style, targetDist) {
     if (better) best = { d, p };
   }
   return best.p;
+}
+
+// Per le ZONE serve il PB più descrittivo della soglia, non il più vicino
+// alla distanza del blocco: il 100 e il 200 descrivono la capacità aerobica,
+// il 50 è dominato da partenza e velocità pura.
+const REF_PRIORITY = [100, 200, 400, 150, 800, 1500, 50, 25];
+function pickReferencePB(list, style) {
+  const cand = (list || []).filter(p => p && p.style === style && p.cs > 0);
+  if (!cand.length) return null;
+  for (const d of REF_PRIORITY) {
+    const match = cand.filter(p => (p.dist || 100) === d);
+    if (match.length) return match.reduce((a, b) => (b.cs < a.cs ? b : a));
+  }
+  return cand[0];
 }
 
 // Distanza di riferimento per il generatore di piani, per obiettivo.
@@ -2764,16 +2800,25 @@ function resolveDecay(dist) {
   return 1.0;
 }
 
-function calcZones(pbCs, pool, style, dist, delta, pbDist) {
+// Il generatore usa base/build/peak/taper; le zone usano solo start/build/peak.
+// taper non ha un delta dedicato: si allena a ritmo gara, quindi eredita peak.
+function resolveZonePhase(phase) {
+  if (phase === 'taper') return 'peak';
+  if (phase === 'base') return 'start';
+  return phase;
+}
+
+function calcZones(pbCs, pool, style, dist, delta, pbDist, phase) {
   // pbDist = distanza su cui è stato fatto il PB (es. 50m)
   // dist   = distanza target per cui calcolare i passi (es. 100m, 200m)
   const decayPb = DECAY[pbDist || dist] || 1.0;
   const base100 = pbCs / decayPb;
   const penaltyPer100 = ((PENALTY[pool]?.[style]) || 0);
-  const baseCs = base100 + penaltyPer100 + (delta * 100);
+  const baseCs = base100 + penaltyPer100 + ((delta || 0) * 100);
   const decay = resolveDecay(dist);
+  const deltaSet = ZONE_DELTA[phase] || ZONE_DELTA.start;
   return Object.entries(ZONES).map(([zKey, zCfg]) => {
-    const zonePace100 = Math.round(baseCs * zCfg.coef);
+    const zonePace100 = Math.round(baseCs + (deltaSet[zKey] || 0));
     const finalPaceCs = Math.round(zonePace100 * decay);
     const recoveryCs = dist < 100 ? RECOVERY[zKey] : Math.round(RECOVERY[zKey] * Math.sqrt(dist/100));
     const cycleInterval = finalPaceCs + recoveryCs;
@@ -2781,9 +2826,21 @@ function calcZones(pbCs, pool, style, dist, delta, pbDist) {
   });
 }
 
+function setZonePhase(phase) {
+  state.phase = phase;
+  saveState();
+  renderPaces();
+}
+
 function renderPaces() {
   const styleEl = document.getElementById('paceStyle');
   const distEl = document.getElementById('paceDist');
+
+  const zPhase = resolveZonePhase(state.phase);
+  ['Start','Build','Peak'].forEach(p => {
+    const el = document.getElementById('pz' + p);
+    if (el) el.classList.toggle('active', p.toLowerCase() === zPhase);
+  });
 
   // Distanze valide per stile
   const VALID_DISTS = {
@@ -2809,7 +2866,7 @@ function renderPaces() {
 
   const style = styleEl.value;
   const dist = parseInt(distEl.value);
-  const delta = parseFloat(document.getElementById('paceDelta').value) || 1.5;
+  const delta = parseFloat(document.getElementById('paceDelta').value) || 0;
 
   const pb = pickPB(state.pbs, style, dist);
   const noPB = document.getElementById('pacesNoPB');
@@ -2837,7 +2894,7 @@ function renderPaces() {
   document.getElementById('paceDistLabel').textContent =
     `${style} ${dist}m · ${state.lang === 'IT' ? 'vasca' : 'pool'} ${pool}`;
 
-  const zones = calcZones(pb.cs, pool, style, dist, delta, pb.dist);
+  const zones = calcZones(pb.cs, pool, style, dist, delta, pb.dist, resolveZonePhase(state.phase));
   const zoneLabels = t('zoneLabels');
 
   document.getElementById('paceZones').innerHTML = zones.map(z => `
@@ -2863,7 +2920,7 @@ function renderPaces() {
 function calcCustomWorkout() {
   const raw = document.getElementById('workoutRaw').value;
   const pool = state.profile?.pool || '25m';
-  const delta = 1.5;
+  const delta = 0;
   const tokens = raw.split(/[\n,;+\t]+/);
   const pattern = /^(?:(\d+)\s*[x*×]\s*)?(\d+)\s*(SL|DO|RA|FA|MI)$/i;
   const resultDiv = document.getElementById('customWorkoutResult');
@@ -2897,7 +2954,7 @@ function calcCustomWorkout() {
         </div>`;
       return;
     }
-    const zones = calcZones(pb.cs, pool, block.style, block.dist, delta, pb.dist);
+    const zones = calcZones(pb.cs, pool, block.style, block.dist, delta, pb.dist, resolveZonePhase(state.phase));
     resultDiv.innerHTML += `
       <div class="card" style="margin:0;">
         <div class="card-header" style="background:var(--bg-overlay);">
@@ -3028,10 +3085,12 @@ const CENTRAL_MATRIX = {
       { zone:'C1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Tolleranza lattato', en:'Lactate tolerance' } },
       { zone:'C2', reps:6,   dist:25,   label:{ it:'Picco alattacido', en:'Alactic peak' } },
       { zone:'C2', reps:8,   dist:15,   label:{ it:'Velocità massimale', en:'Max speed' } },
+      { zone:'B1', reps:6,   dist:100,  label:{ it:'Richiamo soglia', en:'Threshold recall' } },
     ],
     taper: [
       { zone:'C1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Mantenimento gara', en:'Race maintenance' } },
       { zone:'C2', reps:4,   dist:15,   label:{ it:'Velocità', en:'Speed' } },
+      { zone:'B1', reps:4,   dist:100,  label:{ it:'Richiamo soglia', en:'Threshold recall' } },
     ],
   },
   middle: {
@@ -3045,6 +3104,7 @@ const CENTRAL_MATRIX = {
     peak:  [
       { zone:'C1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Ritmo gara medio', en:'Middle distance race pace' } },
       { zone:'C2', reps:4,   dist:25,   label:{ it:'Attivazione', en:'Activation' } },
+      { zone:'B1', reps:6,   dist:200,  label:{ it:'Richiamo soglia', en:'Threshold recall' } },
     ],
     taper: [
       { zone:'B1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Soglia leggera', en:'Light threshold' } },
@@ -3062,6 +3122,7 @@ const CENTRAL_MATRIX = {
     peak:  [
       { zone:'C1', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Resistenza alla velocità', en:'Speed endurance' } },
       { zone:'B2', reps:4,   dist:50,   label:{ it:'VO₂max breve', en:'Short VO₂max' } },
+      { zone:'B1', reps:6,   dist:200,  label:{ it:'Richiamo soglia', en:'Threshold recall' } },
     ],
     taper: [
       { zone:'A2', reps:null, dist:null, useWeeklyVolume: true, label:{ it:'Volume ridotto', en:'Reduced volume' } },
@@ -3070,7 +3131,6 @@ const CENTRAL_MATRIX = {
   },
 };
 
-const TAPER_FACTOR = { base:1.0, build:1.0, peak:1.0, taper:1.0 };
 const WEEK_PROGRESSION = {
   base:  [1.0, 1.0, 1.0, 1.0],
   build: [1.0, 1.0, 1.0, 1.0],
@@ -3186,7 +3246,7 @@ function generatePlan() {
   const plan = [];
 
   for (let w = 0; w < (state.isPro ? totalWeeks : 1); w++) {
-    const weekFactor = WEEK_PROGRESSION[trainState.phase][w] * TAPER_FACTOR[trainState.phase];
+    const weekFactor = WEEK_PROGRESSION[trainState.phase][w];
     const sessions = buildWeek(state.pbs, weekFactor, w);
     plan.push({ week: w + 1, sessions });
   }
@@ -3286,10 +3346,14 @@ function buildSession(pbs, centralBlocks, factor, dayCode, weekIndex, sessionTyp
   let mainBlocks = centralBlocks;
   if (sessionType === 'aerobic') {
     mainBlocks = centralBlocks.filter(b => ['A2','B1'].includes(b.zone));
-    if (!mainBlocks.length) mainBlocks = [centralBlocks[0]];
+    if (!mainBlocks.length) mainBlocks = [centralBlocks.reduce((a, b) =>
+      (ZONES[b.zone]?.stressFactor || 99) < (ZONES[a.zone]?.stressFactor || 99) ? b : a
+    )];
   } else if (sessionType === 'technical') {
     mainBlocks = centralBlocks.filter(b => ['A2','B1','B2'].includes(b.zone));
-    if (!mainBlocks.length) mainBlocks = [centralBlocks[0]];
+    if (!mainBlocks.length) mainBlocks = [centralBlocks.reduce((a, b) =>
+      (ZONES[b.zone]?.stressFactor || 99) < (ZONES[a.zone]?.stressFactor || 99) ? b : a
+    )];
   } else if (sessionType === 'speed') {
     mainBlocks = centralBlocks.filter(b => ['B2','C1','C2'].includes(b.zone));
     if (!mainBlocks.length) mainBlocks = [centralBlocks[centralBlocks.length-1]];
@@ -3396,18 +3460,13 @@ function buildSessionTitle(sessionType, goal) {
   return map[sessionType][lang === 'IT' ? 'IT' : 'EN'];
 }
 
-const ZONES_INFO = {
-  A2: { coef:1.18, color:'var(--z-a2)', stressFactor:1 },
-  B1: { coef:1.10, color:'var(--z-b1)', stressFactor:2.25 },
-  B2: { coef:1.04, color:'var(--z-b2)', stressFactor:3.5 },
-  C1: { coef:1.00, color:'var(--z-c1)', stressFactor:4.75 },
-  C2: { coef:0.98, color:'var(--z-c2)', stressFactor:5.5 },
-};
+// Stessa forma di ZONES (color + stressFactor): nessuna ragione di tenerle duplicate.
+const ZONES_INFO = ZONES;
 
 function getPaceZones(pbList, pool, style, dist, targetZone) {
-  const pb = pickPB(pbList, style, dist);
+  const pb = pickReferencePB(pbList, style);
   if (!pb) return null;
-  const allZones = calcZones(pb.cs, pool, style, dist, 1.5, pb.dist);
+  const allZones = calcZones(pb.cs, pool, style, dist, 0, pb.dist, resolveZonePhase(trainState.phase));
   const zone = allZones.find(z => z.key === targetZone) || allZones[0];
   if (!zone) return null;
   // unit = distanza su cui il passo è espresso (FIX 4)
@@ -3433,6 +3492,15 @@ function renderPlanOutput() {
     `${plan.style} · ${goalLabels[plan.goal][l]} · ${phaseLabels[plan.phase][l]}`;
   document.getElementById('planMeta').textContent =
     `${plan.days.length} ${state.lang === 'IT' ? 'giorni/settimana' : 'days/week'} · ${plan.pool} · ${plan.createdAt}`;
+
+  const refPB = pickReferencePB(state.pbs, plan.style);
+  const refWarnEl = document.getElementById('planRefPBWarning');
+  if (refPB && (refPB.dist || 100) < 100) {
+    refWarnEl.textContent = t('refPBShort').replace('{d}', refPB.dist || 100);
+    refWarnEl.style.display = 'block';
+  } else {
+    refWarnEl.style.display = 'none';
+  }
 
   if (state.isPro) {
     document.getElementById('btnSavePlan').style.display = 'inline-flex';
