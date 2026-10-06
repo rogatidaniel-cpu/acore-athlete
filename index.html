@@ -1068,8 +1068,8 @@ nav {
     </div>
 
     <!-- WIPE -->
-    <div id="wipeSection" style="display:none; margin-top:8px;">
-      <button class="btn btn-danger btn-full btn-sm" onclick="wipeAll()">Wipe Local DB</button>
+    <div id="wipeSection" style="display:none; margin-top:24px; text-align:center;">
+      <button class="btn btn-sm" style="background:none; border:none; color:var(--ink-muted); text-decoration:underline;" onclick="wipeAll()" data-i18n="resetDeviceData">Azzera dati su questo dispositivo</button>
     </div>
 
   </section>
@@ -1855,7 +1855,7 @@ const i18n = {
     dry5:'Stretch dinamico busto e caviglie', dry6:'2 serie di 10 flessioni leggere',
     newRace:'Pianifica una Gara', labelRaceName:'Nome gara', labelRaceDate:'Data', labelRaceEvent:'Gara', labelRaceGoal:'Obiettivo tempo (opzionale)', btnAddRace:'+ Aggiungi Gara',
     raceHistory:'Storico Risultati', analyticsEmpty:'Inserisci PB e risultati gara per vedere le tue analytics.',
-    pbProgression:'Progressione PB', masterCategory:'Posizione categoria', weeklyLoad:'Carico settimanale',
+    pbProgression:'Progressione PB', masterCategory:'Posizione categoria', weeklyLoad:'Carico settimanale', resetDeviceData:'Azzera dati su questo dispositivo',
     pmcTitle:'Condizione di forma', labelSessionEffort:'Intensità', effortEasy:'Facile', effortMedium:'Medio', effortHard:'Duro', effortRace:'Gara', effortSprint:'Sprint',
     modalAddPBTitle:'Aggiungi / Aggiorna PB', modalEditPBTitle:'Modifica PB', labelTime:'Tempo', labelPBDate:'Data PB', btnSavePB:'Salva PB', btnSavePlan:'💾 Salva',
     legendTitle:'Legenda Zone & Hydro-Load', legendDesc:'ACore Athlete usa lo stesso motore di calcolo di ACore Coach — personalizzato sul tuo PB.',
@@ -1976,7 +1976,7 @@ const i18n = {
     dry5:'Dynamic stretch torso and ankles', dry6:'2 sets of 10 light push-ups',
     newRace:'Plan a Race', labelRaceName:'Race name', labelRaceDate:'Date', labelRaceEvent:'Event', labelRaceGoal:'Goal time (optional)', btnAddRace:'+ Add Race',
     raceHistory:'Race Results History', analyticsEmpty:'Add PBs and race results to see your analytics.',
-    pbProgression:'PB Progression', masterCategory:'Category standing', weeklyLoad:'Weekly load',
+    pbProgression:'PB Progression', masterCategory:'Category standing', weeklyLoad:'Weekly load', resetDeviceData:'Reset data on this device',
     pmcTitle:'Form & condition', labelSessionEffort:'Intensity', effortEasy:'Easy', effortMedium:'Medium', effortHard:'Hard', effortRace:'Race', effortSprint:'Sprint',
     modalAddPBTitle:'Add / Update PB', modalEditPBTitle:'Edit PB', labelTime:'Time', labelPBDate:'PB date', btnSavePB:'Save PB', btnSavePlan:'💾 Save',
     legendTitle:'Zone Legend & Hydro-Load', legendDesc:'ACore Athlete uses the same calculation engine as ACore Coach — personalized to your PB.',
@@ -4247,7 +4247,7 @@ function checkPaywall() {
 // WIPE
 // ══════════════════════════════════════════════════════
 async function wipeAll() {
-  if (confirm(state.lang === 'IT' ? 'Azzerare tutto il database locale?' : 'Wipe all local data?')) {
+  if (confirm(state.lang === 'IT' ? 'Azzerare i dati salvati su questo dispositivo?' : 'Reset the data saved on this device?')) {
     await db.delete();
     window.location.reload();
   }
