@@ -3981,7 +3981,7 @@ function tsbStatus(tsb, ctl) {
   return { txt: IT ? 'Fatica alta — attenzione' : 'High fatigue — caution', color: 'var(--z-c1)' };
 }
 
-// Grafico a linee SVG (CTL, ATL, TSB) sugli ultimi N giorni
+// Zone del TSB (disegnate solo nel pannello basso del grafico PMC)
 const BAND_DEFS = [
   { lo:   5, hi:  999, color:'var(--ice)',       it:'scarico',    en:'tapered' },
   { lo: -10, hi:    5, color:'var(--app-color)', it:'ottimale',   en:'optimal' },
@@ -4006,78 +4006,102 @@ function pmcPath(pts, close) {
   }
   return d;
 }
+// Grafico PMC su due pannelli: sopra CTL/ATL, sotto TSB con le sue fasce.
+// Le fasce valgono solo per il TSB, quindi stanno solo nel pannello del TSB.
 function renderPMCChart(series, days) {
   const data = series.slice(-days);
   const IT = state.lang === 'IT';
   if (data.length < 2) return `<div style="color:var(--ink-muted);font-size:0.8rem;padding:20px;text-align:center;">${IT?'Servono più sessioni per il grafico.':'Need more sessions for the chart.'}</div>`;
-  const W=380, H=210, padL=32, padR=48, padT=20, padB=30;
-  const L=padL, R=W-padR, TOP=padT, BOT=H-padB;
-  const vals = data.flatMap(d => [d.ctl, d.atl, d.tsb]);
-  const maxV = Math.max(...vals, 10), minV = Math.min(...vals, 0), rng = (maxV-minV) || 1;
+  const W=380, H=236, padL=32, padR=48;
+  const L=padL, R=W-padR;
+  const T1=20, B1=128;   // pannello CTL/ATL
+  const T2=146, B2=206;  // pannello TSB
   const n = data.length;
   const x = i => L + (i/(n-1))*(R-L);
-  const y = v => TOP + (1 - (v-minV)/rng)*(BOT-TOP);
+  const max1 = Math.max(...data.flatMap(d => [d.ctl, d.atl]), 10), rng1 = max1 || 1;
+  const y1 = v => T1 + (1 - v/rng1)*(B1-T1);
+  const tsbVals = data.map(d => d.tsb);
+  const max2 = Math.max(...tsbVals, 10), min2 = Math.min(...tsbVals, -10), rng2 = (max2-min2) || 1;
+  const y2 = v => T2 + (1 - (v-min2)/rng2)*(B2-T2);
   const idx = {}; data.forEach((d,i) => idx[d.date] = i);
   let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;" font-family="var(--font-data)">
   <defs>
     <linearGradient id="pmcGctl" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--app-color)" stop-opacity="0.38"/><stop offset="100%" stop-color="var(--app-color)" stop-opacity="0"/></linearGradient>
     <linearGradient id="pmcGatl" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--z-b2)" stop-opacity="0.14"/><stop offset="100%" stop-color="var(--z-b2)" stop-opacity="0"/></linearGradient>
     <filter id="pmcGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    <clipPath id="pmcClip"><rect x="${L}" y="${TOP}" width="${R-L}" height="${BOT-TOP}"/></clipPath>
+    <clipPath id="pmcClip1"><rect x="${L}" y="${T1}" width="${R-L}" height="${B1-T1}"/></clipPath>
   </defs>
-  <rect x="${L}" y="${TOP}" width="${R-L}" height="${BOT-TOP}" rx="4" fill="var(--bg-base)"/>`;
+  <rect x="${L}" y="${T1}" width="${R-L}" height="${B1-T1}" rx="4" fill="var(--bg-base)"/>
+  <rect x="${L}" y="${T2}" width="${R-L}" height="${B2-T2}" rx="4" fill="var(--bg-base)"/>`;
+  // Pannello TSB: fasce + etichette (dentro il pannello, a destra)
   BAND_DEFS.forEach(b => {
-    const hi = Math.min(b.hi, maxV), lo = Math.max(b.lo, minV);
+    const hi = Math.min(b.hi, max2), lo = Math.max(b.lo, min2);
     if (hi <= lo) return;
-    const yt = y(hi), yb = y(lo);
-    s += `<rect x="${L}" y="${yt.toFixed(1)}" width="${R-L}" height="${(yb-yt).toFixed(1)}" fill="${b.color}" opacity="0.055"/>`;
-    if (yb - yt > 11) s += `<text x="${R-4}" y="${((yt+yb)/2+2.3).toFixed(1)}" font-size="6" fill="${b.color}" opacity="0.6" text-anchor="end">${IT?b.it:b.en}</text>`;
+    const yt = y2(hi), yb = y2(lo);
+    s += `<rect x="${L}" y="${yt.toFixed(1)}" width="${R-L}" height="${(yb-yt).toFixed(1)}" fill="${b.color}" opacity="0.08"/>`;
+    if (yb - yt > 9) s += `<text x="${R-4}" y="${((yt+yb)/2+2.3).toFixed(1)}" font-size="6" fill="${b.color}" opacity="0.75" text-anchor="end">${IT?b.it:b.en}</text>`;
   });
-  pmcTicks(minV, maxV, 4).forEach(t => {
-    const yy = y(t);
+  s += `<text x="${L}" y="${T2-5}" font-size="6.5" fill="var(--ice)" font-weight="700">TSB · ${IT?'freschezza':'form'}</text>`;
+  // Griglia e assi
+  pmcTicks(0, max1, 3).forEach(t => {
+    const yy = y1(t);
     s += `<line x1="${L}" y1="${yy.toFixed(1)}" x2="${R}" y2="${yy.toFixed(1)}" stroke="var(--ink-muted)" stroke-width="0.5" opacity="0.35"/>`;
     s += `<text x="${L-5}" y="${(yy+2.5).toFixed(1)}" font-size="7.5" fill="var(--ink-muted)" text-anchor="end">${Math.round(t)}</text>`;
   });
-  [['atl','pmcGatl'],['ctl','pmcGctl']].forEach(([k,g]) => {
-    const pts = data.map((d,i) => [x(i), y(d[k])]);
-    s += `<path d="${pmcPath(pts)} L${R.toFixed(1)},${BOT} L${L.toFixed(1)},${BOT} Z" fill="url(#${g})" clip-path="url(#pmcClip)"/>`;
+  pmcTicks(min2, max2, 2).forEach(t => {
+    s += `<text x="${L-5}" y="${(y2(t)+2.5).toFixed(1)}" font-size="7.5" fill="var(--ink-muted)" text-anchor="end">${t>0?'+':''}${Math.round(t)}</text>`;
   });
-  if (minV < 0 && maxV > 0) s += `<line x1="${L}" y1="${y(0).toFixed(1)}" x2="${R}" y2="${y(0).toFixed(1)}" stroke="var(--ink-secondary)" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.5"/>`;
+  s += `<line x1="${L}" y1="${y2(0).toFixed(1)}" x2="${R}" y2="${y2(0).toFixed(1)}" stroke="var(--ink-secondary)" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.5"/>`;
+  // Aree sotto ATL e CTL (pannello alto)
+  [['atl','pmcGatl'],['ctl','pmcGctl']].forEach(([k,g]) => {
+    const pts = data.map((d,i) => [x(i), y1(d[k])]);
+    s += `<path d="${pmcPath(pts)} L${R.toFixed(1)},${B1} L${L.toFixed(1)},${B1} Z" fill="url(#${g})" clip-path="url(#pmcClip1)"/>`;
+  });
+  // Gare: linea verticale su entrambi i pannelli, punto sul TSB, nome sopra
   const inRange = (state.races||[]).filter(r => r.date && idx[String(r.date).slice(0,10)] !== undefined)
     .sort((a,b) => new Date(a.date) - new Date(b.date));
   let lastLabelX = -99;
   inRange.forEach(r => {
     const i = idx[String(r.date).slice(0,10)], xx = x(i);
     const col = r.result ? 'var(--z-b1)' : 'var(--z-c2)';
-    s += `<line x1="${xx.toFixed(1)}" y1="${TOP}" x2="${xx.toFixed(1)}" y2="${BOT}" stroke="${col}" stroke-width="0.9" stroke-dasharray="2 2" opacity="0.75"/>`;
-    s += `<circle cx="${xx.toFixed(1)}" cy="${y(data[i].tsb).toFixed(1)}" r="3" fill="${col}" stroke="var(--bg-void)" stroke-width="1.2"/>`;
-    if (xx - lastLabelX >= 30) {
-      const lx = Math.min(Math.max(xx, L+14), R-14);
-      s += `<rect x="${(lx-13).toFixed(1)}" y="${TOP-13}" width="26" height="11" rx="3" fill="${col}" opacity="0.9"/>`;
-      s += `<text x="${lx.toFixed(1)}" y="${TOP-5}" font-size="6.5" fill="var(--bg-void)" font-weight="700" text-anchor="middle">${escapeHtml(String(r.name||r.event||'').slice(0,6))}</text>`;
+    s += `<line x1="${xx.toFixed(1)}" y1="${T1}" x2="${xx.toFixed(1)}" y2="${B2}" stroke="${col}" stroke-width="0.9" stroke-dasharray="2 2" opacity="0.75"/>`;
+    s += `<circle cx="${xx.toFixed(1)}" cy="${y2(data[i].tsb).toFixed(1)}" r="3" fill="${col}" stroke="var(--bg-void)" stroke-width="1.2"/>`;
+    if (xx - lastLabelX >= 48) {
+      const label = String(r.name||r.event||'').slice(0,10), bw = label.length*4.2 + 8;
+      const lx = Math.min(Math.max(xx, L+bw/2), R-bw/2);
+      s += `<rect x="${(lx-bw/2).toFixed(1)}" y="${T1-13}" width="${bw.toFixed(1)}" height="11" rx="3" fill="${col}" opacity="0.9"/>`;
+      s += `<text x="${lx.toFixed(1)}" y="${T1-5}" font-size="6.5" fill="var(--bg-void)" font-weight="700" text-anchor="middle">${escapeHtml(label)}</text>`;
       lastLabelX = xx;
     }
   });
+  // Date sotto il pannello TSB
   [...new Set([0, Math.floor(n/3), Math.floor(2*n/3), n-1])].sort((a,b)=>a-b).forEach(i => {
     const d = data[i].date, anc = i===0 ? 'start' : (i===n-1 ? 'end' : 'middle');
-    s += `<text x="${x(i).toFixed(1)}" y="${BOT+11}" font-size="7.5" fill="var(--ink-muted)" text-anchor="${anc}">${d.slice(8,10)}/${d.slice(5,7)}</text>`;
+    s += `<text x="${x(i).toFixed(1)}" y="${B2+11}" font-size="7.5" fill="var(--ink-muted)" text-anchor="${anc}">${d.slice(8,10)}/${d.slice(5,7)}</text>`;
   });
-  s += `<text x="${R}" y="${BOT+21}" font-size="6.5" fill="var(--ink-muted)" text-anchor="end" opacity="0.8">${IT?'oggi':'today'}</text>`;
-  [['tsb','var(--copper)','1.5'],['atl','var(--z-b2)','1.6'],['ctl','var(--app-color)','2.3']].forEach(([k,c,w]) => {
-    const pts = data.map((d,i) => [x(i), y(d[k])]);
+  s += `<text x="${R}" y="${B2+21}" font-size="6.5" fill="var(--ink-muted)" text-anchor="end" opacity="0.8">${IT?'oggi':'today'}</text>`;
+  // Linee
+  [['atl','var(--z-b2)','1.6',y1],['ctl','var(--app-color)','2.3',y1],['tsb','var(--ice)','1.8',y2]].forEach(([k,c,w,yf]) => {
+    const pts = data.map((d,i) => [x(i), yf(d[k])]);
     s += `<path d="${pmcPath(pts)}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" filter="url(#pmcGlow)"/>`;
   });
+  // Badge valori finali, fuori dal grafico a destra
+  const last = data[n-1];
+  const badge = (k, c, v, yDot, yy) => {
+    s += `<circle cx="${x(n-1).toFixed(1)}" cy="${yDot.toFixed(1)}" r="2.8" fill="${c}" stroke="var(--bg-void)" stroke-width="1.2"/>`;
+    s += `<rect x="${R+4}" y="${(yy-6.5).toFixed(1)}" width="41" height="13" rx="3.5" fill="${c}" opacity="0.18"/>`;
+    s += `<text x="${R+8}" y="${(yy+3).toFixed(1)}" font-size="7.2" fill="${c}" font-weight="700">${k.toUpperCase()} ${k==='tsb'&&v>0?'+':''}${Math.round(v)}</text>`;
+  };
   const used = [];
-  [['ctl','var(--app-color)'],['atl','var(--z-b2)'],['tsb','var(--copper)']]
-    .sort((a,b) => data[n-1][b[0]] - data[n-1][a[0]])
+  [['ctl','var(--app-color)'],['atl','var(--z-b2)']]
+    .sort((a,b) => last[b[0]] - last[a[0]])
     .forEach(([k,c]) => {
-      const v = data[n-1][k]; let yy = y(v);
-      while (used.some(u => Math.abs(yy-u) < 11)) yy += 11;
-      yy = Math.min(yy, H-4); used.push(yy);
-      s += `<circle cx="${x(n-1).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.8" fill="${c}" stroke="var(--bg-void)" stroke-width="1.2"/>`;
-      s += `<rect x="${R+4}" y="${(yy-6.5).toFixed(1)}" width="41" height="13" rx="3.5" fill="${c}" opacity="0.18"/>`;
-      s += `<text x="${R+8}" y="${(yy+3).toFixed(1)}" font-size="7.2" fill="${c}" font-weight="700">${k.toUpperCase()} ${k==='tsb'&&v>0?'+':''}${Math.round(v)}</text>`;
+      let yy = y1(last[k]);
+      while (used.some(u => Math.abs(yy-u) < 14)) yy += 14;
+      yy = Math.min(Math.max(yy, T1+6), B1-6); used.push(yy);
+      badge(k, c, last[k], y1(last[k]), yy);
     });
+  badge('tsb', 'var(--ice)', last.tsb, y2(last.tsb), Math.min(Math.max(y2(last.tsb), T2+6), B2-6));
   return s + `</svg>`;
 }
 
@@ -4089,11 +4113,11 @@ function pmcLegend() {
   return `<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;font-size:0.66rem;margin-top:8px;">
     ${item('var(--app-color)', 'CTL', IT ? 'forma' : 'fitness')}
     ${item('var(--z-b2)', 'ATL', IT ? 'fatica' : 'fatigue')}
-    ${item('var(--copper)', 'TSB', IT ? 'freschezza' : 'form')}
+    ${item('var(--ice)', 'TSB', IT ? 'freschezza' : 'form')}
   </div>
   <div style="text-align:center;font-size:0.62rem;color:var(--ink-muted);margin-top:4px;">
-    ${IT ? 'Le fasce indicano la zona di TSB. I marcatori verticali sono le tue gare.'
-         : 'The bands show the TSB zone. Vertical markers are your races.'}
+    ${IT ? 'Sopra forma e fatica, sotto la freschezza con le sue zone. Le linee verticali sono le tue gare.'
+         : 'Top: fitness and fatigue. Bottom: form with its zones. Vertical lines are your races.'}
   </div>`;
 }
 
@@ -4113,7 +4137,7 @@ function renderPMC() {
   const numbers = `<div class="pmc-numbers">
     <div class="pmc-num"><div class="val" style="color:var(--app-color)">${Math.round(last.ctl)}</div><div class="lbl">CTL · ${state.lang==='IT'?'Forma':'Fitness'}</div></div>
     <div class="pmc-num"><div class="val" style="color:var(--z-b2)">${Math.round(last.atl)}</div><div class="lbl">ATL · ${state.lang==='IT'?'Fatica':'Fatigue'}</div></div>
-    <div class="pmc-num"><div class="val" style="color:var(--copper)">${last.tsb>0?'+':''}${Math.round(last.tsb)}</div><div class="lbl">TSB · ${state.lang==='IT'?'Freschezza':'Form'}</div></div>
+    <div class="pmc-num"><div class="val" style="color:var(--ice)">${last.tsb>0?'+':''}${Math.round(last.tsb)}</div><div class="lbl">TSB · ${state.lang==='IT'?'Freschezza':'Form'}</div></div>
   </div>
   <div class="pmc-status" style="color:${st.color};background:${st.color}1a;">${st.txt}</div>`;
 
