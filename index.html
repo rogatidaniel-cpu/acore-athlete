@@ -4433,6 +4433,20 @@ async function loadProfile(sb, userId) {
   window.__acoreProfileResolve?.();
 }
 
+// Checkout Lemon: precompila l'email dell'account e passa lo user_id, così il
+// webhook attiva il Pro sull'utente giusto anche se nel checkout si cambia email.
+function prefillCheckoutLinks(user) {
+  if (!user) return;
+  document.querySelectorAll('a[href*="lemonsqueezy.com/checkout"]').forEach(a => {
+    try {
+      const url = new URL(a.href);
+      if (user.email) url.searchParams.set('checkout[email]', user.email);
+      url.searchParams.set('checkout[custom][user_id]', user.id);
+      a.href = url.toString();
+    } catch (e) { /* link non valido: lo lasciamo com'è */ }
+  });
+}
+
 async function loginWithGoogle() {
   const btn = document.getElementById('loginGoogleBtn');
   const errEl = document.getElementById('loginError');
@@ -4809,6 +4823,7 @@ async function deleteWorkout(id) {
       window.__sb.auth.onAuthStateChange(async (event, newSession) => {
         if (event === 'SIGNED_IN' && newSession) {
           await loadProfile(window.__sb, newSession.user.id);
+          prefillCheckoutLinks(newSession.user);
           hideLoginOverlay();
           state.isPro = window.__acoreIsPro === true;
           checkPaywall();
@@ -4822,6 +4837,7 @@ async function deleteWorkout(id) {
       return;
     }
     await loadProfile(window.__sb, session.user.id);
+    prefillCheckoutLinks(session.user);
     await handleStravaCallback();
     await checkStravaConnection();
     await pullState();
