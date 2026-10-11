@@ -2290,7 +2290,7 @@ function exportStateJSON() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `acore-athlete-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `acore-athlete-backup-${localDateKey()}.json`;
   a.click();
   URL.revokeObjectURL(url);
   toast(state.lang === 'IT' ? '✓ Backup scaricato' : '✓ Backup downloaded');
@@ -2497,7 +2497,7 @@ function openModal(id) {
   document.getElementById(id).style.display = 'flex';
   if (id === 'modalAddPB') {
     if (!pbEditMode) {
-      document.getElementById('pbDate').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('pbDate').value = localDateKey();
       document.getElementById('pbMin').value = '';
       document.getElementById('pbSec').value = '';
       document.getElementById('pbCs').value  = '';
@@ -2507,7 +2507,7 @@ function openModal(id) {
     pbEditMode = false;
   }
   if (id === 'modalAddSession') {
-    document.getElementById('sessDate').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('sessDate').value = localDateKey();
     setSessPool('25m');
     setSessEffort('B1');
     renderSessTssPreview();
@@ -2661,7 +2661,7 @@ function savePB() {
   if (totalCs <= 0) return;
 
   const idx = state.pbs.findIndex(p => p.style === style && p.dist === dist && p.pool === currentPBPool);
-  const entry = { style, dist, cs: totalCs, pool: currentPBPool, date: date || new Date().toISOString().slice(0,10) };
+  const entry = { style, dist, cs: totalCs, pool: currentPBPool, date: date || localDateKey() };
   if (idx >= 0) state.pbs[idx] = entry;
   else state.pbs.push(entry);
 
@@ -2688,7 +2688,7 @@ function saveWorkoutManual() {
     return;
   }
 
-  const date = document.getElementById('sessDate').value || new Date().toISOString().slice(0, 10);
+  const date = document.getElementById('sessDate').value || localDateKey();
   const distance = parseInt(document.getElementById('sessDistance').value) || 0;
   const min = parseInt(document.getElementById('sessMin').value) || 0;
   const sec = parseInt(document.getElementById('sessSec').value) || 0;
@@ -3259,7 +3259,7 @@ function generatePlan() {
     style: trainState.style,
     pool: trainState.pool,
     days: [...trainState.days],
-    createdAt: new Date().toISOString().slice(0, 10),
+    createdAt: localDateKey(),
     weeks: plan,
   };
 
@@ -3934,6 +3934,13 @@ function sessionTSS(w) {
   return Math.round((dist / 100) * zone.stressFactor * PMC_NORMALIZE);
 }
 
+// Data locale YYYY-MM-DD. toISOString() da' la data UTC: in Italia la mezzanotte
+// locale diventa il giorno prima, e la sessione di oggi spariva dal PMC.
+function localDateKey(d = new Date()) {
+  const z = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
+}
+
 // Costruisce la serie giornaliera CTL/ATL/TSB dalla prima sessione a oggi.
 function buildPMCSeries() {
   const workouts = (state.workouts || []).filter(w => !w.deleted && w.date);
@@ -3953,7 +3960,7 @@ function buildPMCSeries() {
   const series = [];
   let ctl = 0, atl = 0;
   for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
-    const key = day.toISOString().slice(0, 10);
+    const key = localDateKey(day);
     const tss = tssByDay[key] || 0;
     ctl = ctl + (tss - ctl) / 42;
     atl = atl + (tss - atl) / 7;
@@ -4047,7 +4054,7 @@ function renderPMCChart(series, days) {
     if (xx - lastLabelX >= 30) {
       const lx = Math.min(Math.max(xx, L+14), R-14);
       s += `<rect x="${(lx-13).toFixed(1)}" y="${TOP-13}" width="26" height="11" rx="3" fill="${col}" opacity="0.9"/>`;
-      s += `<text x="${lx.toFixed(1)}" y="${TOP-5}" font-size="6.5" fill="var(--bg-void)" font-weight="700" text-anchor="middle">${String(r.event||'').slice(0,6)}</text>`;
+      s += `<text x="${lx.toFixed(1)}" y="${TOP-5}" font-size="6.5" fill="var(--bg-void)" font-weight="700" text-anchor="middle">${escapeHtml(String(r.name||r.event||'').slice(0,6))}</text>`;
       lastLabelX = xx;
     }
   });
