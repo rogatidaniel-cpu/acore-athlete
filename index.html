@@ -4039,7 +4039,7 @@ function renderPMCChart(series, days) {
     if (hi <= lo) return;
     const yt = y2(hi), yb = y2(lo);
     s += `<rect x="${L}" y="${yt.toFixed(1)}" width="${R-L}" height="${(yb-yt).toFixed(1)}" fill="${b.color}" opacity="0.08"/>`;
-    if (yb - yt > 9) s += `<text x="${R-4}" y="${((yt+yb)/2+2.3).toFixed(1)}" font-size="6" fill="${b.color}" opacity="0.75" text-anchor="end">${IT?b.it:b.en}</text>`;
+    if (yb - yt > 9) s += `<text x="${L+4}" y="${((yt+yb)/2+2.3).toFixed(1)}" font-size="6" fill="${b.color}" opacity="0.75" text-anchor="start">${IT?b.it:b.en}</text>`;
   });
   s += `<text x="${L}" y="${T2-5}" font-size="6.5" fill="var(--ice)" font-weight="700">TSB · ${IT?'freschezza':'form'}</text>`;
   // Griglia e assi
