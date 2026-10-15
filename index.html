@@ -143,7 +143,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   width: calc(100% + 32px);
 }
 .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.logo-mark { width: 32px; height: 32px; flex-shrink: 0; }
+.logo-mark { height: 32px; width: auto; flex-shrink: 0; }
 .logo-text {
   font-family: var(--font-ui, inherit);
   font-size: 1.05rem;
@@ -917,11 +917,7 @@ nav {
 <!-- HEADER -->
 <header class="header">
   <div class="logo" style="cursor:default;">
-    <svg class="logo-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5 25H75L95 50L75 75H5L25 50L5 25Z" fill="var(--app-color)"/>
-      <path d="M25 37H70L80 50L70 63H25L35 50L25 37Z" fill="#04060a"/>
-      <path d="M45 45H65L69 50L65 55H45L49 50L45 45Z" fill="var(--app-color)"/>
-    </svg>
+    <img class="logo-mark" src="aquacore-mark.png" alt="AQUACORE.AI" width="56" height="32">
     <div>
       <div class="logo-text">AQUA<span>CORE</span>.AI</div>
       <div class="logo-sub">ACore Athlete</div>
