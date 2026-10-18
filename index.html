@@ -389,6 +389,8 @@ nav {
 .zone-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .zone-key { font-weight: 700; font-size: 0.85rem; font-family: var(--font-data); }
 .zone-label { font-size: 0.72rem; color: var(--ink-secondary); }
+.race-form-locked { opacity: 0.5; }
+.race-form-locked input, .race-form-locked select, .race-form-locked button { cursor: not-allowed; }
 .zone-right { text-align: right; }
 .zone-pace { font-family: var(--font-data); font-weight: 700; font-size: 1rem; }
 .zone-int { font-size: 0.7rem; color: var(--ink-secondary); font-family: var(--font-data); }
@@ -1505,7 +1507,7 @@ nav {
     </div>
 
     <!-- NUOVA GARA -->
-    <div class="card">
+    <div class="card" id="raceFormCard">
       <div class="card-header"><span class="card-title" data-i18n="newRace">Pianifica una Gara</span></div>
       <div class="card-body">
         <div>
@@ -3883,6 +3885,7 @@ function deleteRace(id) {
   state.races = state.races.filter(r => r.id !== id);
   saveState();
   renderRaces();
+  updatePaywallBanners();
   toast(t('toastDeleted'));
 }
 
@@ -3901,6 +3904,12 @@ function updatePaywallBanners() {
     raceBanner.style.display = showRace ? 'block' : 'none';
     document.getElementById('racePaywallTitle').textContent = t('paywallRaceTitle');
     document.getElementById('racePaywallDesc').textContent = t('paywallRaceDesc');
+    // Limite Free raggiunto: disattiva il modulo "Pianifica una gara" invece di bloccare solo al click
+    const raceForm = document.getElementById('raceFormCard');
+    if (raceForm) {
+      raceForm.classList.toggle('race-form-locked', showRace);
+      raceForm.querySelectorAll('input, select, button').forEach(el => { el.disabled = showRace; });
+    }
   }
 }
 
