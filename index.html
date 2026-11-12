@@ -144,6 +144,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .logo-mark { height: 32px; width: auto; flex-shrink: 0; }
+.logo-wordmark { height: 36px; width: auto; flex-shrink: 0; }
 .logo-text {
   font-family: var(--font-ui, inherit);
   font-size: 1.05rem;
@@ -153,10 +154,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   line-height: 1;
 }
 .logo-text span { color: var(--app-color); }
-.logo-sub { font-size: 0.7rem; color: var(--app-color); font-family: var(--font-data); letter-spacing: 0.08em; text-transform: uppercase; }
-.legal-links { font-family: var(--font-data); font-size: 0.58rem; letter-spacing: 0.02em; margin-top: 4px; }
-.legal-links a { color: var(--ink-secondary); text-decoration: none; }
-.legal-links a:hover { color: var(--ink-primary); }
+.logo-sub { font-size: 1.05rem; font-weight: 800; color: var(--ink-primary); font-family: var(--font-ui); letter-spacing: -0.01em; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 12px; }
 .header-actions { display: flex; gap: 10px; align-items: center; }
 .icon-btn {
   background: var(--bg-raised);
@@ -769,8 +767,8 @@ nav {
 
 /* Small phones (max 390px) */
 @media (max-width: 390px) {
-  .logo-text { font-size: 0.95rem; }
-  .logo-sub { font-size: 0.58rem; }
+  .logo-wordmark { height: 30px; }
+  .logo-sub { font-size: 0.9rem; padding-left: 10px; }
   .pb-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .time-input-group { gap: 4px; }
   .time-input-group input { font-size: 1rem; padding: 8px 6px; }
@@ -778,8 +776,6 @@ nav {
   .btn-sm { font-size: 0.7rem; padding: 5px 8px; }
   .paywall-banner { flex-direction: column; align-items: flex-start; }
   .btn-pro { align-self: stretch; text-align: center; }
-  /* Header non si schiaccia */
-  .logo-text { letter-spacing: -0.05em; }
 }
 
 @media print {
@@ -919,15 +915,8 @@ nav {
 <!-- HEADER -->
 <header class="header">
   <div class="logo" style="cursor:default;">
-    <img class="logo-mark" src="aquacore-mark.png" alt="AQUACORE.AI" width="56" height="32">
-    <div>
-      <div class="logo-text">AQUA<span>CORE</span>.AI</div>
-      <div class="logo-sub">ACore Athlete</div>
-      <div class="legal-links">
-        <a href="https://getaquacore.com/privacy.html">Privacy</a> ·
-        <a href="https://getaquacore.com/terms.html">Terms</a>
-      </div>
-    </div>
+    <img class="logo-wordmark" src="aquacore-logo.png" alt="aquacore.ai" width="166" height="36">
+    <div class="logo-sub">Athlete</div>
   </div>
   <div class="header-actions">
     <div class="toggle-group">
